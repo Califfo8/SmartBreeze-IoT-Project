@@ -165,6 +165,7 @@ PROCESS_THREAD(energy_manager_process, ev, data)
     // Predict the solar energy
     solar_energy = predict_solar_energy();
     passing_time(datetime, 1);
+    LOG_INFO("Time: Month:%f Day:%f Hour:%f\n", datetime[0], datetime[1], datetime[2]);
     etimer_set(&sleep_timer, CLOCK_SECOND * SAMPLING_PERIOD);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
   } while (1);
