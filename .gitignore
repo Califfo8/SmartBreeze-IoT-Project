@@ -1,3 +1,6 @@
+climate-manager/build
+energy-manager/build
+
 # Prerequisites
 *.d
 
