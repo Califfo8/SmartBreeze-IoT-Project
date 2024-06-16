@@ -30,10 +30,12 @@ float sampled_energy = 0;
 #define SAMPLING_PERIOD 10 //3600 // Ogni ora
 
 // Prediction parameters
-float datetime[] = {7, 15, 0}; // month, day, hour
+float datetime[] = {7, 15, 5}; // month, day, hour
 float future_hours = 1; // prediction horizon
 float max_error = 500; // maximum prediction error
 float correction_factor = 0;
+const float SCALER_MEAN[] = {6.51393662, 16.15158457, 13.93967163}; 
+const float SCALER_SCALE[] = {2.65563593, 8.99027562, 3.8395894};
 
 void passing_time(float* dt, float hours)
 {
@@ -65,20 +67,32 @@ void passing_time(float* dt, float hours)
   }
 }
 
-float predict_solar_energy()
+// Is needed for standardize the features in input to the model
+void scaler(float* features, float* scaled_features)
+{
+  for (int i = 0; i < 3; i++)
+  {
+    scaled_features[i] = (features[i] - SCALER_MEAN[i]) / SCALER_SCALE[i];
+  }
+}
+float predict_solar_energy(float sampled_energy)
 {
     float features[] = {datetime[0], datetime[1], datetime[2]};
+    float scaled_features[] = {0, 0, 0};
     float prediction = 0;
     printf("%p\n", eml_net_activation_function_strs); // This is needed to avoid compiler error (warnings == errors)
     // Compute the prediction of the sampled solar energy
-    prediction = solar_prediction_predict(features, 3);
-    // Compute the correction factor;
-    correction_factor = (sampled_energy - prediction)*(float)0.95;
+    scaler(features, scaled_features);
+    prediction = solar_prediction_predict(scaled_features, 3);
+    // Calibrate the correction factor;
+    correction_factor = (sampled_energy - prediction)*0.12 + correction_factor*0.88;
     // Compute the prediction of the future solar energy
     passing_time(features, future_hours);
-    prediction = solar_prediction_predict(features, 3);
-    LOG_INFO("Predicted Solar energy: %f\n", prediction);
+    scaler(features, scaled_features);
+    prediction = solar_prediction_predict(scaled_features, 3);
+    LOG_INFO("Correction Factor: %f\n", correction_factor);
     prediction  += correction_factor;
+    LOG_INFO("Predicted Solar energy: %f\n", prediction);
     if (prediction < 0)
       prediction = 0;
     
@@ -163,7 +177,7 @@ PROCESS_THREAD(energy_manager_process, ev, data)
     sampled_energy = fake_solar_sensing(sampled_energy);
     LOG_INFO("Sampled Solar energy: %f", sampled_energy);
     // Predict the solar energy
-    solar_energy = predict_solar_energy();
+    solar_energy = predict_solar_energy(sampled_energy);
     passing_time(datetime, 1);
     LOG_INFO("Time: Month:%f Day:%f Hour:%f\n", datetime[0], datetime[1], datetime[2]);
     etimer_set(&sleep_timer, CLOCK_SECOND * SAMPLING_PERIOD);

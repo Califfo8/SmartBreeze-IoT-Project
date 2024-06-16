@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simconf version="2023090101">
   <simulation>
-    <title>My simulation</title>
-    <speedlimit>1.0</speedlimit>
+    <title>NodeSimulation1</title>
+    <speedlimit>2.0</speedlimit>
     <randomseed>123456</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
@@ -39,7 +39,7 @@
       <mote>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="56.90110497227447" y="84.16052621553818" />
+          <pos x="20.248885198025512" y="60.762203666353216" />
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -71,7 +71,7 @@
       <mote>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="95.11561563574624" y="64.12590217198483" />
+          <pos x="44.667396315425606" y="51.8123391830957" />
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -103,7 +103,7 @@
       <mote>
         <interface_config>
           org.contikios.cooja.interfaces.Position
-          <pos x="54.35376727338797" y="49.43928670276241" />
+          <pos x="51.86899332400954" y="71.66875841719194" />
         </interface_config>
         <interface_config>
           org.contikios.cooja.contikimote.interfaces.ContikiMoteID
@@ -120,7 +120,7 @@
       <skin>org.contikios.cooja.plugins.skins.GridVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.TrafficVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.UDGMVisualizerSkin</skin>
-      <viewport>6.3472900057740205 0.0 0.0 6.3472900057740205 -233.36276015417891 -212.99837865480413</viewport>
+      <viewport>7.80285986829131 0.0 0.0 7.80285986829131 -140.36285005294752 -295.75285047892334</viewport>
     </plugin_config>
     <bounds x="1" y="1" height="400" width="400" z="2" />
   </plugin>
@@ -131,7 +131,7 @@
       <formatted_time />
       <coloring />
     </plugin_config>
-    <bounds x="400" y="160" height="482" width="2090" />
+    <bounds x="400" y="160" height="446" width="2090" z="3" />
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.TimeLine
@@ -152,7 +152,7 @@
       <notes>Enter notes here</notes>
       <decorations>true</decorations>
     </plugin_config>
-    <bounds x="400" y="0" height="160" width="2090" z="3" />
+    <bounds x="400" y="0" height="160" width="2090" z="1" />
   </plugin>
   <plugin>
     org.contikios.cooja.serialsocket.SerialSocketServer
@@ -161,6 +161,6 @@
       <port>60001</port>
       <bound>true</bound>
     </plugin_config>
-    <bounds x="-12" y="402" height="116" width="362" z="1" />
+    <bounds x="20" y="422" height="116" width="362" />
   </plugin>
 </simconf>
