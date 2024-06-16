@@ -4,7 +4,8 @@ all: $(CONTIKI_PROJECT)
 PLATFORMS_EXCLUDE = sky z1
 
 # Include CoAP resources
-MODULES_REL += ../fake_sensor
+MODULES_REL += ../Utility/RandomNumberGenerator
+MODULES_REL += ../Utility/Timestamp
 MODULES_REL+=./resources
 MODULES_REL+=/home/iot_ubuntu_intel/.local/lib/python3.10/site-packages/emlearn
 

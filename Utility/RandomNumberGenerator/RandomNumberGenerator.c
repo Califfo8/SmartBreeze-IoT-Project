@@ -1,6 +1,6 @@
-#include "fake_sensor.h"
+#include "RandomNumberGenerator.h"
 
-float read_sensor_value(float old_value, int max_value, int min_value, float step_size, int increases)
+float generate_random_float(float old_value, int max_value, int min_value, float step_size, int increases)
 {
     int step = step_size * (max_value - min_value);
     int delta_i = random_rand() % step;
@@ -18,4 +18,3 @@ float read_sensor_value(float old_value, int max_value, int min_value, float ste
         new_value = (float)min_value;
     return new_value;
 }
-

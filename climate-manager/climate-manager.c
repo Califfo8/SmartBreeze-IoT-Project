@@ -3,7 +3,8 @@
 #include "coap-blocking-api.h"
 #include "sys/log.h"
 #include "etimer.h"
-#include "../fake_sensor/fake_sensor.h"
+//#include "../Utility/Timestamp/Timestamp.h"
+#include "../Utility/RandomNumberGenerator/RandomNumberGenerator.h"
 
 #include <stdio.h>
 // Log configuration
@@ -46,7 +47,7 @@ void registration_chunk_handler(coap_message_t *response)
 }
 float fake_temp_sensing(float temperature)
 {
-  return read_sensor_value(temperature, MAX_VALUE, MIN_VALUE, 0.1, 1);
+  return generate_random_float(temperature, MAX_VALUE, MIN_VALUE, 0.1, 1);
 }
 /*---------------------------------------------------------------------------*/
 PROCESS(climate_manager_process, "climate-manager process");

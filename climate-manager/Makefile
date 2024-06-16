@@ -4,7 +4,7 @@ all: $(CONTIKI_PROJECT)
 PLATFORMS_EXCLUDE = sky z1
 
 # Include CoAP resources
-MODULES_REL += ../fake_sensor
+MODULES_REL += ../Utility/RandomNumberGenerator
 MODULES_REL+=./resources
 CONTIKI=../../..
 

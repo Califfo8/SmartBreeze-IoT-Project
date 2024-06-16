@@ -1,6 +1,6 @@
 climate-manager/build
 energy-manager/build
-
+.vscode
 # Prerequisites
 *.d
 
