@@ -18,7 +18,8 @@ CONTIKI=../../..
 ifeq ($(TARGET), cooja)
 CFLAGS += -DCOOJA
 endif
-
+CFLAGS+=-Wno-error=unused-variable
+CFLAGS+=-Wno-error=unused-function
 # Include the CoAP implementation
 include $(CONTIKI)/Makefile.dir-variables
 MODULES += $(CONTIKI_NG_APP_LAYER_DIR)/coap

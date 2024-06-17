@@ -1,7 +1,5 @@
 #include "JSONSenML.h"
-#ifndef COOJA
-#include <nrfx.h>
-#endif
+
 
 void get_base_name(char *mac_str) {
     

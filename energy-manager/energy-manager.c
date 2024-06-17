@@ -103,7 +103,7 @@ PROCESS_THREAD(energy_manager_process, ev, data)
   do
   {
     // Sense the solar energy
-    //res_solar_energy.trigger();
+    res_solar_energy.trigger();
     // Wait for the next sensing interval
     etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));

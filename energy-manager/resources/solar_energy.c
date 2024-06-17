@@ -28,7 +28,7 @@
 //Actual date and time in [Year,Month, Day, Hour] format
 extern Timestamp timestamp;
 //Prediction horizon in hours
-static float future_hours = 1;
+static int future_hours = 1;
 //Correction factor for the prediction
 static float correction_factor = 0;
 //Scaler parameters for standardizing the input features
@@ -100,11 +100,16 @@ static float predict(float* features)
 
 static float predict_solar_energy()
 {
-    Timestamp ts_copy;
+    Timestamp ts_copy={
+      .year = timestamp.year,
+      .month = timestamp.month,
+      .day = timestamp.day,
+      .hour = timestamp.hour,
+      .minute = timestamp.minute
+    };
     float features[] = {0, 0, 0};
     float prediction = 0;
     // Copy the timestamp
-    copy_timestamp(&timestamp, &ts_copy);
     printf("%p\n", eml_net_activation_function_strs); // This is needed to avoid compiler error (warnings == errors)
     // Initialize the features
     convert_to_feature(&ts_copy, features);
@@ -123,70 +128,70 @@ static float predict_solar_energy()
       prediction = 0;
     //log information
     LOG_INFO("[Energy-manager] \t-Correction Factor: %f\n", correction_factor);
-    LOG_INFO("[Energy-manager] \t-Predicted Solar energy: %f\n", prediction);    
+    LOG_INFO("[Energy-manager] \t-Predicted Solar energy: %f\n", prediction);   
     return prediction;
 }
 
 
 // Define the resource handler function
 static void res_get_handler(coap_message_t *request, coap_message_t *response,
-                          uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+                          uint8_t *buffer, uint16_t preferred_size, int32_t *offset){
 
-MeasurementData data[2];
-json_senml js_senml;
-char timestamp_str[TIMESTAMP_STRING_LEN];
-char base_name[BASE_NAME_LEN];
-int payload_len = 0;
+    MeasurementData data[2];
+    json_senml js_senml;
+    char timestamp_str[TIMESTAMP_STRING_LEN];
+    char base_name[BASE_NAME_LEN];
+    int payload_len = 0;
 
-//Creo il timestamp
-timestamp_to_string(&timestamp, timestamp_str);
-// Create the base name
-get_base_name(base_name);
+    //Creo il timestamp
+    timestamp_to_string(&timestamp, timestamp_str);
+    // Create the base name
+    get_base_name(base_name);
 
-// Inizializzo i valori delle risorse
-data[0].name = "predicted";
-data[0].unit = UNIT;
-strcpy(data[0].time, timestamp_str);
-data[0].v.vd = predicted_energy;
+    // Inizializzo i valori delle risorse
+    data[0].name = "predicted";
+    data[0].unit = UNIT;
+    strcpy(data[0].time, timestamp_str);
+    data[0].v.vd = predicted_energy;
 
-data[1].name = "sampled";
-data[1].unit = UNIT;
-strcpy(data[1].time, timestamp_str);
-data[1].v.vd = sampled_energy;
+    data[1].name = "sampled";
+    data[1].unit = UNIT;
+    strcpy(data[1].time, timestamp_str);
+    data[1].v.vd = sampled_energy;
 
-// Creo il JSON SenML
-js_senml.base_name = base_name;
-js_senml.base_unit = UNIT;
-js_senml.measurement_data = data;
-js_senml.num_measurements = 2;
+    // Creo il JSON SenML
+    js_senml.base_name = base_name;
+    js_senml.base_unit = UNIT;
+    js_senml.measurement_data = data;
+    js_senml.num_measurements = 2;
 
-// Convert the JSON SenML to a payload
+    // Convert the JSON SenML to a payload
 
-payload_len = json_to_payload(&js_senml, (char*)buffer);
+    payload_len = json_to_payload(&js_senml, (char*)buffer);
 
-if (payload_len < 0)
-{
-  LOG_ERR("[Energy-manager] Error in the json_to_payload function\n");
-  coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
-  coap_set_payload(response, buffer, 0);
-  return;
-}else if (payload_len > preferred_size)
-{
-  LOG_ERR("[Energy-manager] Buffer overflow\n");
-  coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
-  coap_set_payload(response, buffer, 0);
-  return;
-}
+    if (payload_len < 0)
+    {
+      LOG_ERR("[Energy-manager] Error in the json_to_payload function\n");
+      coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
+      coap_set_payload(response, buffer, 0);
+      return;
+    }else if (payload_len > preferred_size)
+    {
+      LOG_ERR("[Energy-manager] Buffer overflow\n");
+      coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
+      coap_set_payload(response, buffer, 0);
+      return;
+    }
 
-// Prepare the response
-// Copy the response in the transmission buffer
-//memcpy(buffer, message, payload_len);
-coap_set_header_content_format(response, APPLICATION_JSON);
-coap_set_header_etag(response, (uint8_t *)&payload_len, 1);
-coap_set_payload(response, buffer, payload_len);
+    // Prepare the response
+    // Copy the response in the transmission buffer
+    //memcpy(buffer, message, payload_len);
+    coap_set_header_content_format(response, APPLICATION_JSON);
+    coap_set_header_etag(response, (uint8_t *)&payload_len, 1);
+    coap_set_payload(response, buffer, payload_len);
 
-// Print sended data for debug
-LOG_INFO("[Energy-manager] Sending data: %s\n", buffer);
+    // Print sended data for debug
+    LOG_INFO("[Energy-manager] Sending data: %s\n", buffer);
 }
 
 static void res_event_handler(void) {
