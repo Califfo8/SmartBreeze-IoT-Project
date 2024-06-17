@@ -8,6 +8,7 @@
 //Utility functions
 #include "../Utility/Timestamp/Timestamp.h"
 #include "../Utility/RandomNumberGenerator/RandomNumberGenerator.h"
+#include "../Utility/JSONSenML/JSONSenML.h"
 //----------------------------------PARAMETERS----------------------------------//
 
 //[+] LOG CONFIGURATION
@@ -17,14 +18,15 @@
 //[+] ENERGY PARAMETERS
 #define MAX_ENERGY 7500
 #define MIN_ENERGY 0
+#define UNIT "W"
 // Simulation parameters
 #define MAX_NIGHT_ENERGY 200
 #define DAY_STEP 0.2 // Energy increase simulation step during the day
 #define NIGHT_STEP 0.1
 
 //[+] PREDICTION PARAMETERS
-//Actual date and time in [Month, Day, Hour] format
-extern int timestamp[];
+//Actual date and time in [Year,Month, Day, Hour] format
+extern Timestamp timestamp;
 //Prediction horizon in hours
 static float future_hours = 1;
 //Correction factor for the prediction
@@ -65,15 +67,15 @@ static float fake_solar_sensing(float old_value)
     old_value = 500;
 
   // If is night, the solar energy is near to 0
-  if (timestamp[2] >= 20 || timestamp[2] <= 6)
+  if (timestamp.hour >= 20 || timestamp.hour <= 6)
     return generate_random_float(old_value, 200, 0, NIGHT_STEP, 1);
 
   // After sunrise, the solar energy increases
-  if (timestamp[2] >= 6 && timestamp[2] <= 13)
+  if (timestamp.hour>= 6 && timestamp.hour<= 13)
     return generate_random_float(old_value, MAX_ENERGY, MIN_ENERGY, DAY_STEP, 1);
   
   // After noon, the solar energy decrease
-  if (timestamp[2] >= 13 && timestamp[2] <= 20)
+  if (timestamp.hour >= 13 && timestamp.hour<= 20)
     return generate_random_float(old_value, MAX_ENERGY, MIN_ENERGY, DAY_STEP, 0);
   
   LOG_ERR("[Energy-manager] Error in the fake_solar_sensing function\n");
@@ -98,19 +100,21 @@ static float predict(float* features)
 
 static float predict_solar_energy()
 {
-    int ts_copy[] = {timestamp[0], timestamp[1], timestamp[2]};
+    Timestamp ts_copy;
     float features[] = {0, 0, 0};
     float prediction = 0;
+    // Copy the timestamp
+    copy_timestamp(&timestamp, &ts_copy);
     printf("%p\n", eml_net_activation_function_strs); // This is needed to avoid compiler error (warnings == errors)
     // Initialize the features
-    convert_to_float(ts_copy, features);
+    convert_to_feature(&ts_copy, features);
     // Compute the prediction of the last sampled solar energy
     prediction = predict(features);
     // Calibrate the correction factor;
     correction_factor = (sampled_energy - prediction)*0.12 + correction_factor*0.88;
     // Compute the prediction of the future solar energy
-    advance_time(ts_copy, future_hours);
-    convert_to_float(ts_copy, features);
+    advance_time(&ts_copy, future_hours);
+    convert_to_feature(&ts_copy, features);
     prediction = predict(features);
     // Apply the correction factor
     prediction  += correction_factor;
@@ -127,21 +131,68 @@ static float predict_solar_energy()
 // Define the resource handler function
 static void res_get_handler(coap_message_t *request, coap_message_t *response,
                           uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-char message[12];
-int length = 12;
 
-snprintf(message, length, "%f", sampled_energy);
+MeasurementData data[2];
+json_senml js_senml;
+char timestamp_str[TIMESTAMP_STRING_LEN];
+char base_name[BASE_NAME_LEN];
+int payload_len = 0;
+
+//Creo il timestamp
+timestamp_to_string(&timestamp, timestamp_str);
+// Create the base name
+get_base_name(base_name);
+
+// Inizializzo i valori delle risorse
+data[0].name = "predicted";
+data[0].unit = UNIT;
+strcpy(data[0].time, timestamp_str);
+data[0].v.vd = predicted_energy;
+
+data[1].name = "sampled";
+data[1].unit = UNIT;
+strcpy(data[1].time, timestamp_str);
+data[1].v.vd = sampled_energy;
+
+// Creo il JSON SenML
+js_senml.base_name = base_name;
+js_senml.base_unit = UNIT;
+js_senml.measurement_data = data;
+js_senml.num_measurements = 2;
+
+// Convert the JSON SenML to a payload
+
+payload_len = json_to_payload(&js_senml, (char*)buffer);
+
+if (payload_len < 0)
+{
+  LOG_ERR("[Energy-manager] Error in the json_to_payload function\n");
+  coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
+  coap_set_payload(response, buffer, 0);
+  return;
+}else if (payload_len > preferred_size)
+{
+  LOG_ERR("[Energy-manager] Buffer overflow\n");
+  coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
+  coap_set_payload(response, buffer, 0);
+  return;
+}
 
 // Prepare the response
 // Copy the response in the transmission buffer
-memcpy(buffer, message, length);
-coap_set_header_content_format(response, TEXT_PLAIN);
-coap_set_header_etag(response, (uint8_t *)&length, 1);
-coap_set_payload(response, buffer, length);
+//memcpy(buffer, message, payload_len);
+coap_set_header_content_format(response, APPLICATION_JSON);
+coap_set_header_etag(response, (uint8_t *)&payload_len, 1);
+coap_set_payload(response, buffer, payload_len);
+
+// Print sended data for debug
+LOG_INFO("[Energy-manager] Sending data: %s\n", buffer);
 }
 
 static void res_event_handler(void) {
-    LOG_INFO("[Energy-manager] New sample at time [M:%d, D:%d, H:%d]\n", timestamp[0], timestamp[1], timestamp[2]);
+    char timestamp_str[TIMESTAMP_STRING_LEN];
+    timestamp_to_string(&timestamp, timestamp_str);
+    LOG_INFO("[Energy-manager] New sample at time %s\n", timestamp_str);
     // Sample the solar energy
     sampled_energy = fake_solar_sensing(sampled_energy);
     LOG_INFO("[Energy-manager] \t-Sampled Solar energy: %f", sampled_energy);

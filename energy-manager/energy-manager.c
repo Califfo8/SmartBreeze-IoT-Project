@@ -23,8 +23,14 @@ static const char *service_registration_url = "/registration"; // URL di registr
 #define SAMPLING_PERIOD 1 // in hours
 int h_sampling_period = SAMPLING_PERIOD; // in hours
 int sampling_period = 10; //3600 * h_sampling_period; in seconds
-
-int timestamp[] = {7, 15, 5}; // DOPO DEVE ESSERE RICHIESTO ALL'APPLICAZIONE CLOUD
+// Year|Month Day Hour | Minute
+Timestamp timestamp = {
+  .year = 2024,
+  .month = 7,
+  .day = 15,
+  .hour = 5,
+  .minute = 0
+};// DOPO DEVE ESSERE RICHIESTO ALL'APPLICAZIONE CLOUD
 
 //[+] TIMERS
 #define SLEEP_INTERVAL 30 // in seconds
@@ -97,12 +103,12 @@ PROCESS_THREAD(energy_manager_process, ev, data)
   do
   {
     // Sense the solar energy
-    res_solar_energy.trigger();
+    //res_solar_energy.trigger();
     // Wait for the next sensing interval
     etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
     // Update the timestamp
-    advance_time(timestamp, h_sampling_period);
+    advance_time(&timestamp, h_sampling_period);
   } while (1);
 
   PROCESS_END();
