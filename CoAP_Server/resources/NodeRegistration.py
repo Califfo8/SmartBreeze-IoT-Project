@@ -13,7 +13,7 @@ class DBAccess():
 SBDB = DBAccess()
 json_register_schema = {
     "node" : {"type" : "string"},
-    "resources" : {"type" : "string"}
+    "resource" : {"type" : "string"}
 }
 class NodeRegistration(Resource):
 
@@ -39,7 +39,7 @@ class NodeRegistration(Resource):
         print("[UP] Node Registration POST: {}".format(node_info["node"]))
         # Insert the node information into the database
         query = "REPLACE INTO nodes (ip, name ,resource, status) VALUES (%s, %s, %s, %s)"
-        val = (request.source[0], node_info["node"], str(node_info["resources"]), 'ACTIVE')
+        val = (request.source[0], node_info["node"], str(node_info["resource"]), 'ACTIVE')
         try:
             # Connect to the MySQL database
             mydb = mysql.connector.connect(

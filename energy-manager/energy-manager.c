@@ -11,7 +11,7 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 //[+] REGISRATION PARAMETERS
-#define NODE_INFO_JSON "{\"node\":\"energy-manager\",\"resources\":[\"solar_energy\"]}"
+#define NODE_INFO_JSON "{\"node\":\"energy-manager\",\"resource\":\"solar_energy\"}"
 #define MAX_REGISTER_ATTEMPTS 3
 #define SERVER_EP "coap://[fd00::1]:5683"
 #define CREATED_CODE 65
@@ -44,10 +44,12 @@ extern coap_resource_t res_solar_energy;
 // Define a handler to handle the response from the server
 void registration_chunk_handler(coap_message_t *response)
 {
-  printf("client_chunk_handler\n");
     if(response == NULL) {
-        LOG_ERR("Request timed out or there was some problem\n");
-    } else {
+        LOG_ERR("Request timed out\n");
+    }  else if (response->code !=65)
+    {
+        LOG_ERR("[Energy-manager] Error: %d\n",response->code);
+    }else{
         LOG_INFO("successful node registration\n");
         max_register_attempts = 0; // Stop the registration attempts
         return;

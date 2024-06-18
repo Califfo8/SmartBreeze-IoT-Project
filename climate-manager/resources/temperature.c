@@ -44,7 +44,7 @@ static float temperature = 20.0;
 static int active_hvac = 0; // 0: OFF, 1: HVAC1 ON, 2: HVAC2 ON
 //----------------------------FUNCTIONS DEFINITIONS----------------------------------//
 static float fake_temp_sensing(float temperature);
-static void manage_hvac(float temperature);
+//static void manage_hvac(float temperature);
 void res_get_handler(coap_message_t *request, coap_message_t *response,
                           uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 static void res_event_handler(void);
@@ -81,6 +81,7 @@ static float fake_temp_sensing(float temperature)
   return 0;
         
 }
+/*
 static void manage_hvac(float temperature)
 {
 
@@ -95,7 +96,7 @@ static void manage_hvac(float temperature)
         active_hvac = OFF;
     }
 
-}
+}*/
 
 /* Define the resource handler function */
 void res_get_handler(coap_message_t *request, coap_message_t *response,

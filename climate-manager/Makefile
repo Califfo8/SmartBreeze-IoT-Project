@@ -8,14 +8,17 @@ MODULES_REL += ../Utility/RandomNumberGenerator
 MODULES_REL += ../Utility/JSONSenML
 MODULES_REL+=./resources
 
-ifeq ($(TARGET), cooja)
-CFLAGS += -DCOOJA
-endif
-
 CONTIKI=../../..
 
 # Include the CoAP implementation
 include $(CONTIKI)/Makefile.dir-variables
 MODULES += $(CONTIKI_NG_APP_LAYER_DIR)/coap
 
+ifeq ($(TARGET), cooja)
+CFLAGS += -DCOOJA
+endif
+CFLAGS+=-Wno-error=unused-variable
+CFLAGS+=-Wno-error=unused-function
+
+CFLAGS += -DCOAP_OBSERVE_CLIENT=1
 include $(CONTIKI)/Makefile.include
