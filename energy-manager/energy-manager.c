@@ -23,7 +23,7 @@ static const char *service_registration_url = "/registration"; // URL di registr
 #define SAMPLING_PERIOD 1 // in hours
 int h_sampling_period = SAMPLING_PERIOD; // in hours
 int sampling_period = 10; //3600 * h_sampling_period; in seconds
-// Year|Month Day Hour | Minute
+
 Timestamp timestamp = {
   .year = 2024,
   .month = 7,
@@ -35,10 +35,6 @@ Timestamp timestamp = {
 //[+] TIMERS
 #define SLEEP_INTERVAL 30 // in seconds
 static struct etimer sleep_timer;
-//[+] STATUS
-#define ACTIVE 0
-#define SLEEP 1
-int status = ACTIVE;
 
 //----------------------------------RESOURCES----------------------------------//
 extern coap_resource_t res_solar_energy;

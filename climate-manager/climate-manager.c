@@ -3,28 +3,38 @@
 #include "coap-blocking-api.h"
 #include "sys/log.h"
 #include "etimer.h"
+#include <stdio.h>
 //#include "../Utility/Timestamp/Timestamp.h"
 #include "../Utility/RandomNumberGenerator/RandomNumberGenerator.h"
 
-#include <stdio.h>
-// Log configuration
+
+//----------------------------------PARAMETERS----------------------------------//
+//[+] LOG CONFIGURATION
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
-// Resource registration path
+
+//[+] REGISRATION PARAMETERS
 #define NODE_INFO_JSON "{\"node\":\"climate-manager\",\"resources\":[\"temperature\"]}"
 #define MAX_REGISTER_ATTEMPTS 3
 #define SERVER_EP "coap://[fd00::1]:5683"
 #define CREATED_CODE 65
+
 int max_register_attempts = MAX_REGISTER_ATTEMPTS;
 static const char *service_registration_url = "/registration"; // URL di registrazione
 
-// temperature resource
-extern coap_resource_t res_temperature;
-extern float temperature;
-#define MAX_VALUE 40
-#define MIN_VALUE 10
-#define SAMPLING_PERIOD 10
+//[+] TIME PARAMETERS
+#define SAMPLING_PERIOD 10 // in seconds
+int sampling_period = 10; //3600 * h_sampling_period; in seconds
+
+//[+] TIMERS
+#define SLEEP_INTERVAL 30 // in seconds
+static struct etimer sleep_timer;
+
+//----------------------------------RESOURCES----------------------------------//
+extern coap_resource_t res_temperature_HVAC;
+
+//----------------------------FUNCTIONS----------------------------------------//
 
 // Define a handler to handle the response from the server
 void registration_chunk_handler(coap_message_t *response)
@@ -45,22 +55,18 @@ void registration_chunk_handler(coap_message_t *response)
         max_register_attempts = -1;
     }
 }
-float fake_temp_sensing(float temperature)
-{
-  return generate_random_float(temperature, MAX_VALUE, MIN_VALUE, 0.1, 1);
-}
-/*---------------------------------------------------------------------------*/
+
+//----------------------------MAIN PROCESS----------------------------------------//
 PROCESS(climate_manager_process, "climate-manager process");
 AUTOSTART_PROCESSES(&climate_manager_process);
-/*---------------------------------------------------------------------------*/
+//--------------------------------------------------------------------------------//
 PROCESS_THREAD(climate_manager_process, ev, data)
 {
   
   PROCESS_BEGIN();
-  // [1] Registration to the coap server
+  //------------------[1]-CoAP-Server-Registration-------------------------------//
    static coap_endpoint_t server_ep;
     static coap_message_t request[1]; // This way the packet can be treated as pointer as usual
-    static struct etimer sleep_timer;
 
     while (max_register_attempts != 0) {
         // Populate the coap endpoint structure
@@ -74,24 +80,23 @@ PROCESS_THREAD(climate_manager_process, ev, data)
         COAP_BLOCKING_REQUEST(&server_ep, request, registration_chunk_handler);
         // Something goes wrong with the registration, the node sleeps and tries again
         if (max_register_attempts == -1) {
-            etimer_set(&sleep_timer, CLOCK_SECOND * 30);
+            etimer_set(&sleep_timer, CLOCK_SECOND * SLEEP_INTERVAL);
             PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
             max_register_attempts = MAX_REGISTER_ATTEMPTS;
         }
       
     }
-  // [2] Climate management
+  //------------------------[2]-Climate-Management----------------------------------//
   LOG_INFO("Climate manager started\n");
   // Activate the temperature resource
-  LOG_INFO("Energy manager started\n");
-  // Activate the solar energy resource
-  coap_activate_resource(&res_temperature,"temperature");
-  // Sensing interval
+  coap_activate_resource(&res_temperature_HVAC,"temperature");
+  
   do
   {
-    temperature = fake_temp_sensing(temperature);
-    LOG_INFO("Sampled Temperature: %f\n", temperature);
-    etimer_set(&sleep_timer, CLOCK_SECOND * SAMPLING_PERIOD);
+    // Sense the temperature and manage the HVAC
+    res_temperature_HVAC.trigger();
+    // Wait for the next sensing interval
+    etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
   } while (1);
 

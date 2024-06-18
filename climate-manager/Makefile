@@ -5,7 +5,13 @@ PLATFORMS_EXCLUDE = sky z1
 
 # Include CoAP resources
 MODULES_REL += ../Utility/RandomNumberGenerator
+MODULES_REL += ../Utility/JSONSenML
 MODULES_REL+=./resources
+
+ifeq ($(TARGET), cooja)
+CFLAGS += -DCOOJA
+endif
+
 CONTIKI=../../..
 
 # Include the CoAP implementation
