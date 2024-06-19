@@ -98,15 +98,21 @@ PROCESS_THREAD(energy_manager_process, ev, data)
   // Activate the solar energy resource
   coap_activate_resource(&res_solar_energy,"solar_energy");
   // Sensing interval
+  etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
   do
   {
-    // Sense the solar energy
-    res_solar_energy.trigger();
-    // Wait for the next sensing interval
-    etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
-    // Update the timestamp
-    advance_time(&timestamp, h_sampling_period);
+    //Process going to sleep
+    PROCESS_YIELD();
+    if(etimer_expired(&sleep_timer))
+    {
+      // Sense the solar energy
+      res_solar_energy.trigger();
+      // Update the timestamp
+      advance_time(&timestamp, h_sampling_period);
+      // Wait for the next sensing interval
+      etimer_reset(&sleep_timer);
+    }
+    
   } while (1);
 
   PROCESS_END();

@@ -127,8 +127,8 @@ static float predict_solar_energy()
     if (prediction < 0)
       prediction = 0;
     //log information
-    LOG_INFO("[Energy-manager] \t-Correction Factor: %f\n", correction_factor);
-    LOG_INFO("[Energy-manager] \t-Predicted Solar energy: %f\n", prediction);   
+    LOG_INFO("\t -Correction Factor: %f\n", correction_factor);
+    LOG_INFO("\t -Predicted Solar energy: %f\n", prediction);   
     return prediction;
 }
 
@@ -136,28 +136,36 @@ static float predict_solar_energy()
 // Define the resource handler function
 static void res_get_handler(coap_message_t *request, coap_message_t *response,
                           uint8_t *buffer, uint16_t preferred_size, int32_t *offset){
-
+    
+    LOG_INFO("[Energy-manager] GET request arrived:\n");
+   
     MeasurementData data[2];
     json_senml js_senml;
-    char timestamp_str[TIMESTAMP_STRING_LEN];
+    char name1[] = "predicted";
+    char name2[] = "sampled";
+    char timestamp_str_1[TIMESTAMP_STRING_LEN];
+    char timestamp_str_2[TIMESTAMP_STRING_LEN];
     char base_name[BASE_NAME_LEN];
     int payload_len = 0;
-
+    
     //Creo il timestamp
-    timestamp_to_string(&timestamp, timestamp_str);
+    timestamp_to_string(&timestamp, timestamp_str_1);
+    strcpy(timestamp_str_2, timestamp_str_1);
     // Create the base name
     get_base_name(base_name);
-
+     
     // Inizializzo i valori delle risorse
-    data[0].name = "predicted";
+    data[0].name = name1;
     data[0].unit = UNIT;
-    strcpy(data[0].time, timestamp_str);
-    data[0].v.vd = predicted_energy;
+    data[0].time = timestamp_str_1;
+    data[0].v.v = predicted_energy;
+    data[0].type = V_FLOAT;
 
-    data[1].name = "sampled";
+    data[1].name = name2;
     data[1].unit = UNIT;
-    strcpy(data[1].time, timestamp_str);
-    data[1].v.vd = sampled_energy;
+    data[1].time = timestamp_str_2;
+    data[1].v.v = sampled_energy;
+    data[1].type = V_FLOAT;
 
     // Creo il JSON SenML
     js_senml.base_name = base_name;
@@ -166,18 +174,18 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
     js_senml.num_measurements = 2;
 
     // Convert the JSON SenML to a payload
-
+    LOG_INFO(" \t Getting the payload...\n");
     payload_len = json_to_payload(&js_senml, (char*)buffer);
-
+   
     if (payload_len < 0)
     {
-      LOG_ERR("[Energy-manager] Error in the json_to_payload function\n");
+      LOG_ERR("\t Error in the json_to_payload function\n");
       coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
       coap_set_payload(response, buffer, 0);
       return;
     }else if (payload_len > preferred_size)
     {
-      LOG_ERR("[Energy-manager] Buffer overflow\n");
+      LOG_ERR("\t Buffer overflow\n");
       coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
       coap_set_payload(response, buffer, 0);
       return;
@@ -191,7 +199,7 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
     coap_set_payload(response, buffer, payload_len);
 
     // Print sended data for debug
-    LOG_INFO("[Energy-manager] Sending data: %s\n", buffer);
+    LOG_INFO("\t Sending data: %s\n", buffer);
 }
 
 static void res_event_handler(void) {
@@ -200,9 +208,10 @@ static void res_event_handler(void) {
     LOG_INFO("[Energy-manager] New sample at time %s\n", timestamp_str);
     // Sample the solar energy
     sampled_energy = fake_solar_sensing(sampled_energy);
-    LOG_INFO("[Energy-manager] \t-Sampled Solar energy: %f", sampled_energy);
+    LOG_INFO("\t-Sampled Solar energy: %f", sampled_energy);
     // Predict the solar energy
     predicted_energy = predict_solar_energy();
     // Notify the observers
+    LOG_INFO("\t-Notifing the observers\n");
     coap_notify_observers(&res_solar_energy);
 }

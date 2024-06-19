@@ -10,7 +10,8 @@
 
 //#include "../Utility/Timestamp/Timestamp.h"
 #include "../Utility/RandomNumberGenerator/RandomNumberGenerator.h"
-
+#include "../Utility/JSONSenML/JSONSenML.h"
+#include "../Utility/Timestamp/Timestamp.h"
 
 //----------------------------------PARAMETERS----------------------------------//
 //[+] LOG CONFIGURATION
@@ -74,14 +75,14 @@ void discovery_chunk_handler(coap_message_t *response)
 {
   const uint8_t *buffer = NULL;
     if(response == NULL) {
-        LOG_ERR("[Climate-manager] Request timed out \n");
+        LOG_ERR("\t Request timed out \n");
     } else if (response->code !=69)
     {
-        LOG_ERR("[Climate-manager] Error: %d\n",response->code);
+        LOG_ERR("\t Error: %d\n",response->code);
     }else{
         coap_get_payload(response, &buffer);
         strncpy(ip_energy_manager, (char *)buffer, response->payload_len);
-        LOG_INFO("[Climate-manager] Successful node discovery: %s \n",ip_energy_manager);
+        LOG_INFO("\t Successful node discovery: %s \n",ip_energy_manager);
         max_attempts = 0; // Stop the discovery attempts
         return;
     }
@@ -95,27 +96,66 @@ void discovery_chunk_handler(coap_message_t *response)
 
 static void solar_energy_callback(coap_observee_t *obs, void *notification, coap_notification_flag_t flag)
 {
-    int buffer_size = 0;
-    const uint8_t *buffer = NULL;
+    LOG_INFO("[Climate-manager] Notification received:");
+    
+    static json_senml payload;
 
-    if (notification)
-    {
-        buffer_size = coap_get_payload(notification, &buffer);
-        printf("Buffer size: %d\n", buffer_size);
+    static MeasurementData data[2];
+    payload.measurement_data = data;
+    payload.num_measurements = 2;
+
+    static char base_name[MAX_STR_LEN];
+    static char base_unit[] = "W";
+    static char name[2][MAX_STR_LEN];
+    static char unit[2][MAX_STR_LEN];
+    static char time[2][TIMESTAMP_STRING_LEN];
+    
+    payload.base_name = base_name;
+    payload.base_unit = base_unit;
+    
+    payload.measurement_data[0].name = name[0];
+    payload.measurement_data[0].unit = unit[0];
+    payload.measurement_data[0].time = time[0];
+
+    payload.measurement_data[1].name = name[1];
+    payload.measurement_data[1].unit = unit[1];
+    payload.measurement_data[1].time = time[1];
+
+    const uint8_t *buffer = NULL;
+    if(notification){
+        coap_get_payload(notification, &buffer);
     }
     
-    switch (flag)
-    {
+    switch (flag) {
     case NOTIFICATION_OK:
-        LOG_INFO("[Climate-manager] Notification received from EM: %s\n", buffer);
+        LOG_INFO("\t Start parsing the payload\n");
+        payload_to_json((char*)buffer, &payload, 2);
+        LOG_INFO("\t Base name: %s\n", payload.base_name);
+        LOG_INFO("\t Base unit: %s\n", payload.base_unit);
+        for (int i = 0; i < payload.num_measurements; i++)
+        {
+            LOG_INFO("\t Measurement %d\n", i);
+            LOG_INFO("\t Name: %s\n", payload.measurement_data[i].name);
+            LOG_INFO("\t Unit: %s\n", payload.measurement_data[i].unit);
+            LOG_INFO("\t Time: %s\n", payload.measurement_data[i].time);
+            LOG_INFO("\t Measure: %f\n", payload.measurement_data[i].v.v);
+        }
         break;
+    case OBSERVE_OK:
+        LOG_INFO("\t Observe OK\n");
+        
+        break;
+    case OBSERVE_NOT_SUPPORTED:
+        LOG_INFO("\t Observe not supported\n");
+        break;
+    case ERROR_RESPONSE_CODE:
+        LOG_INFO("\t Error response code\n");
+        break;
+    case NO_REPLY_FROM_SERVER:
+        LOG_INFO("\t No reply from server\n");
+        break;
+    }
     
-    default:
-        break;
-    }
-    if (notification == NULL) {
-        LOG_ERR("[Climate-manager] Solar energy notification received\n");
-    }
 }
 
 //----------------------------MAIN PROCESS----------------------------------------//
@@ -171,7 +211,7 @@ PROCESS_THREAD(climate_manager_process, ev, data)
 
     //Register to the solar energy resource
     char solar_energy_ep[100];
-    snprintf(solar_energy_ep, 100, "coap://%s:5683", ip_energy_manager);
+    snprintf(solar_energy_ep, 100, "coap://[%s]:5683", ip_energy_manager);
     coap_endpoint_parse(solar_energy_ep, strlen(solar_energy_ep), &energy_manager_ep);
 
     solar_energy_res = coap_obs_request_registration(&energy_manager_ep, RES_SOLAR_ENERGY, solar_energy_callback, NULL);
@@ -180,14 +220,18 @@ PROCESS_THREAD(climate_manager_process, ev, data)
   LOG_INFO("[Climate-manager] Climate manager started\n");
   // Activate the temperature resource
   coap_activate_resource(&res_temperature_HVAC,"temperature_HVAC");
-  
+  etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
   do
   {
-    // Sense the temperature and manage the HVAC
-    res_temperature_HVAC.trigger();
-    // Wait for the next sensing interval
-    etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
-    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
+    //Process going to sleep
+    PROCESS_YIELD();
+    if(etimer_expired(&sleep_timer))
+    {
+      // Sense the temperature and manage the HVAC
+      res_temperature_HVAC.trigger();
+      // Wait for the next sensing interval
+      etimer_reset(&sleep_timer);
+    }   
   } while (1);
 
   PROCESS_END();

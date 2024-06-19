@@ -39,16 +39,16 @@ int json_to_payload(json_senml* js, char* payload)
          js->measurement_data[i].unit, 
          js->measurement_data[i].time);
         strcat(payload, comodo);
-        if (js->measurement_data[i].v.v)
+        if (js->measurement_data[i].type == V_FLOAT)
         {
 
             sprintf(comodo, "%f},", js->measurement_data[i].v.v);
         }
-        else if (js->measurement_data[i].v.vd)
+        else if (js->measurement_data[i].type == V_INT)
         {
             sprintf(comodo, "%d},", js->measurement_data[i].v.vd);
         }
-        else if (js->measurement_data[i].v.vs)
+        else if (js->measurement_data[i].type == V_STRING)
         {
             sprintf(comodo, "\"%s\"},", js->measurement_data[i].v.vs);
         }else{
@@ -57,6 +57,20 @@ int json_to_payload(json_senml* js, char* payload)
         strcat(payload, comodo);
     }
     strcat(payload, "}");
-    printf("%s\n", payload);
     return sizeof(payload);
+}
+
+int payload_to_json(const char* payload, json_senml* js, int num_measurements) {
+    sscanf(payload,"{\"bn\":\"%[^\"]\"",js->base_name);
+    sscanf(payload,"{\"bu\":\"%[^\"]\"",js->base_unit);
+    for (int i = 0; i < num_measurements; i++)
+    {
+        sscanf(payload,"{\"n\":\"%[^\"]\",\"u\":\"%[^\"]\",\"t\":\"%[^\"]\",\"v\":%f}", 
+         js->measurement_data[i].name, 
+         js->measurement_data[i].unit, 
+         js->measurement_data[i].time,
+         &js->measurement_data[i].v.v);
+    }
+
+    return 0;
 }

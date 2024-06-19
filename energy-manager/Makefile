@@ -11,6 +11,7 @@ MODULES_REL+=./resources
 MODULES_REL+=/home/iot_ubuntu_intel/.local/lib/python3.10/site-packages/emlearn
 
 TARGET_LIBFILES += -lm
+
 INC+= /home/iot_ubuntu_intel/.local/lib/python3.10/site-packages/emlearn
 
 CONTIKI=../../..
@@ -20,6 +21,7 @@ CFLAGS += -DCOOJA
 endif
 CFLAGS+=-Wno-error=unused-variable
 CFLAGS+=-Wno-error=unused-function
+CFLAGS+=-Wno-error=unused-but-set-variable
 # Include the CoAP implementation
 include $(CONTIKI)/Makefile.dir-variables
 MODULES += $(CONTIKI_NG_APP_LAYER_DIR)/coap

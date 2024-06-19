@@ -66,6 +66,7 @@ function mysql_cmd() {
 
 function create_db(){
     # Create database
+    mysql_cmd "DROP DATABASE IF EXISTS ${DATABASE_NAME};"
     mysql_cmd "CREATE DATABASE IF NOT EXISTS ${DATABASE_NAME};"
 
     #Adding tables
