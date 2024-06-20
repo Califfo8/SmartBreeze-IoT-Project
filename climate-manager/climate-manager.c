@@ -122,24 +122,18 @@ static void solar_energy_callback(coap_observee_t *obs, void *notification, coap
     payload.measurement_data[1].time = time[1];
 
     const uint8_t *buffer = NULL;
+    int buffer_size = 0;
     if(notification){
-        coap_get_payload(notification, &buffer);
+        buffer_size = coap_get_payload(notification, &buffer);
     }
-    
+    char buffer_str[buffer_size + 1];
     switch (flag) {
     case NOTIFICATION_OK:
+        strncpy(buffer_str, (char*)buffer, buffer_size);
         LOG_INFO("\t Start parsing the payload\n");
-        payload_to_json((char*)buffer, &payload, 2);
-        LOG_INFO("\t Base name: %s\n", payload.base_name);
-        LOG_INFO("\t Base unit: %s\n", payload.base_unit);
-        for (int i = 0; i < payload.num_measurements; i++)
-        {
-            LOG_INFO("\t Measurement %d\n", i);
-            LOG_INFO("\t Name: %s\n", payload.measurement_data[i].name);
-            LOG_INFO("\t Unit: %s\n", payload.measurement_data[i].unit);
-            LOG_INFO("\t Time: %s\n", payload.measurement_data[i].time);
-            LOG_INFO("\t Measure: %f\n", payload.measurement_data[i].v.v);
-        }
+        LOG_INFO("\t Payload: %s\n", buffer_str);
+        parse_str(buffer_str, &payload);
+        print_json_senml(&payload);
         break;
     case OBSERVE_OK:
         LOG_INFO("\t Observe OK\n");

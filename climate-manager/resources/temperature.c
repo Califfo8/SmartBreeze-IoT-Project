@@ -118,7 +118,7 @@ static void res_event_handler(void) {
     LOG_INFO("[Climate-manager] New sample \n");
     // Sample the solar energy
     temperature = fake_temp_sensing(temperature);
-    LOG_INFO("[Energy-manager] \t-Sampled Temperature\n: %f", temperature);
+    LOG_INFO("[Energy-manager] \t-Sampled Temperature: %f\n", temperature);
     // Making Decision
     
     // Notify the observers

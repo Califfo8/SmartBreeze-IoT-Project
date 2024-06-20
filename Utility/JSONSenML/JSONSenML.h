@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-
+#include <stdlib.h>
+#include "sys/log.h"
 #ifndef COOJA
 #include <nrfx.h>
 #endif
@@ -14,6 +15,10 @@
 #define V_INT 0
 #define V_FLOAT 1
 #define V_STRING 2
+
+//LOG CONFIGURATION
+#define LOG_MODULE "App"
+#define LOG_LEVEL LOG_LEVEL_INFO
 
 typedef union {
     float v;    // float value
@@ -40,6 +45,7 @@ typedef struct {
 
 void get_base_name(char *mac_str);
 int json_to_payload(json_senml* js, char* string);
-void parse_measurement(const char* json, MeasurementData* measurement);
-int payload_to_json(const char* payload, json_senml* js,  int num_measurements);
+int copy_value (char *string, char *output, char *start, char *end);
+void print_json_senml(json_senml *senml);
+void parse_str (char *payload, json_senml * js);
 #endif // JSONSENML_H

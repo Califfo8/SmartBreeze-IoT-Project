@@ -60,17 +60,131 @@ int json_to_payload(json_senml* js, char* payload)
     return sizeof(payload);
 }
 
-int payload_to_json(const char* payload, json_senml* js, int num_measurements) {
-    sscanf(payload,"{\"bn\":\"%[^\"]\"",js->base_name);
-    sscanf(payload,"{\"bu\":\"%[^\"]\"",js->base_unit);
-    for (int i = 0; i < num_measurements; i++)
-    {
-        sscanf(payload,"{\"n\":\"%[^\"]\",\"u\":\"%[^\"]\",\"t\":\"%[^\"]\",\"v\":%f}", 
-         js->measurement_data[i].name, 
-         js->measurement_data[i].unit, 
-         js->measurement_data[i].time,
-         &js->measurement_data[i].v.v);
-    }
+int copy_value (char *string, char *output, char *start, char *end)
+{
 
-    return 0;
+  char *start_ptr = strstr(string, start);
+  char *end_ptr = strstr(string, end);
+    LOG_INFO("Start: %s\n End: %s\n\n", start_ptr, end_ptr);
+
+  if (start_ptr == NULL || end_ptr == NULL)
+	{
+	  return -1;
+	}
+  // Tolgo la prima parte
+  start_ptr += strlen (start);
+  
+  strncpy (output, start_ptr, end_ptr - start_ptr);
+  output[end_ptr - start_ptr] = '\0';
+  return (end_ptr - string) + strlen(end);
 }
+
+void parse_str (char *payload, json_senml * js)
+{
+  char* pos = payload;
+  int passo = 0;
+  // Copio il base_name
+  passo = copy_value (pos, js->base_name, "\"bn\":", ",");
+  if(passo == -1)
+  {
+      LOG_ERR("ERROR: Parsing base name\n");
+      LOG_ERR("\t %s\n", pos);
+      return;
+  }
+  pos += passo;
+  
+  // Copio la base unit
+  passo = copy_value (pos, js->base_unit, "\"bu\":", "}");
+  if(passo == -1)
+  {
+      LOG_ERR("ERROR: Parsing base unit\n");
+      return;
+  }
+  pos += passo;
+  // Skip the ",{"
+  pos+=2;
+  // Copio i dati
+  for(int i=0; i<js->num_measurements;i++)
+  {
+      // name
+      passo = copy_value (pos, js->measurement_data[i].name, "\"n\":", ",");
+      if(passo == -1)
+      {
+        LOG_ERR("ERROR: Parsing name of measure %d\n", i);
+        return;
+      }
+      pos += passo;
+      // Unit
+      passo = copy_value (pos, js->measurement_data[i].unit, "\"u\":", ",");
+      if(passo == -1)
+      {
+        LOG_ERR("ERROR: Parsing unit of measure %d\n", i);
+        return;
+      }
+      pos += passo;
+      //Timestamp
+      passo = copy_value (pos, js->measurement_data[i].time, "\"t\":", ",");
+      if(passo == -1)
+      {
+        LOG_ERR("ERROR: Parsing time of measure %d\n", i);
+        return;
+      }
+      pos += passo;
+      
+      //Value
+      char time_value[MAX_STR_LEN];
+      char *endptr;
+      char *point;
+      passo = copy_value (pos, time_value, "\"v\":", "}");
+      if(passo == -1)
+      {
+        LOG_ERR("ERROR: Parsing value of measure %d\n", i);
+        return;
+      }
+      pos += passo;
+      // Replace "," to "."
+      point = strstr(time_value, ",");
+      if(point != NULL)
+      {
+          *point = '.';
+      }
+      // Convert to float
+      js->measurement_data[i].v.v = strtof(time_value, &endptr);
+       if (endptr == time_value) {
+        LOG_ERR("ERROR: Convert value of measure %d\n", i);
+        }
+        js->measurement_data[i].type = V_FLOAT;
+      // Skip the ",{"
+      pos+=2;
+  }
+}
+void print_json_senml(json_senml *senml) {
+    LOG_INFO("Base Name: %s\n", senml->base_name);
+    LOG_INFO("Base Unit: %s\n", senml->base_unit);
+    LOG_INFO("Number of Measurements: %d\n", senml->num_measurements);
+
+    for (int i = 0; i < senml->num_measurements; i++) {
+        MeasurementData *md = &senml->measurement_data[i];
+        LOG_INFO("\nMeasurement %d:\n", i + 1);
+        LOG_INFO("  Name: %s\n", md->name);
+        LOG_INFO("  Unit: %s\n", md->unit);
+        LOG_INFO("  Time: %s\n", md->time);
+
+        // Stampa il valore in base al tipo
+        switch (md->type) {
+            case V_FLOAT:
+                LOG_INFO("  Value: %f (float)\n", md->v.v);
+                break;
+            case V_INT:
+                LOG_INFO("  Value: %d (int)\n", md->v.vd);
+                break;
+            case V_STRING:
+                LOG_INFO("  Value: %s (string)\n", md->v.vs);
+                break;
+            default:
+                LOG_INFO("  Value: Unknown type\n");
+                break;
+        }
+    }
+}
+
