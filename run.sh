@@ -55,8 +55,8 @@ function run_rpl_border_router(){
 }
 
 function run_CoAP_server(){
-    cd ./CoAP_Server
-    gnome-terminal -- python3 ./CoAP_Server.py
+    cd ./PythonApplication
+    gnome-terminal -- python3 ./main.py
     cd $BASE_PATH
 }
 
@@ -76,6 +76,18 @@ function create_db(){
     resource VARCHAR(255) NOT NULL,
     status VARCHAR(255) NOT NULL,
     PRIMARY KEY (ip));"
+
+    mysql_cmd "CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.solar_production 
+    (timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    sampled FLOAT, 
+    predicted FLOAT,
+    PRIMARY KEY (timestamp));"
+
+    mysql_cmd "CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.temperature 
+    (timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    temperature FLOAT NOT NULL,
+    active_HVAC INT NOT NULL,
+    PRIMARY KEY (timestamp));"
     echo "Database creato"
 }
 

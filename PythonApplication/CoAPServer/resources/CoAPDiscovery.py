@@ -1,16 +1,15 @@
 from coapthon.resources.resource import Resource
 from coapthon.client.helperclient import HelperClient
 from coapthon import defines
-import json
-from jsonschema import validate, ValidationError
-from DBAccess import DBAccess
 import coapthon.defines as defines
+from configparser import ConfigParser
+from Utility.DBAccess import DBAccess
 
 class CoAPDiscovery(Resource):
 
     def __init__(self, name="CoAP Discovery"):
         super(CoAPDiscovery, self).__init__(name, observable=False)
-        self.payload = ""    
+        self.payload = "" 
     
     def check_resource(self, host, port, resource):
         """Check if the resource is available in the node and if the node is active"""
@@ -32,11 +31,13 @@ class CoAPDiscovery(Resource):
         print("[UP] Requested ip resource: {}".format(request.payload))
 
         # Search the resource in the database
+        configur = ConfigParser()
+        configur.read('./CoAPServer/config.ini')
         database = DBAccess(
-            host="localhost",
-            user="root",
-            password="PASSWORD",
-            database="SmartBreezeDB")
+            host = configur.get('mysql', 'host'),
+            user = configur.get('mysql', 'user'),
+            password = configur.get('mysql', 'password'),
+            database = configur.get('mysql', 'database'))
         
         if database.connect() is None:
             return None
@@ -64,4 +65,5 @@ class CoAPDiscovery(Resource):
 
         print("\t Resource found at: {}, sending to request".format(node_ip[0][0]))
         res.payload = node_ip[0][0]
+        
         return res

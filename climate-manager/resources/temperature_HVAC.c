@@ -18,12 +18,14 @@
 #define HVAC2 2
 // Simulation parameters
 #define MAX_TEMP 42
-#define MIN_TEMP 10
-#define HIGTH_RATE 0.3
-#define LOW_RATE 0.1
+#define MIN_TEMP 5
+#define HIGTH_RATE 0.1
+#define LOW_RATE 0.05
 #define P_HIGTH 0.3 // Probability of generating a high rate temperature
-#define HVAC1_RATE 0.15
-#define HVAC2_RATE 0.4
+
+#define HVAC1_RATE 0.06
+#define HVAC2_RATE 0.12
+
 // User parameters
 #define MAX_TEMP_USER 25
 #define MIN_TEMP_USER 10
@@ -47,7 +49,7 @@ static float old_temperature = 20.0;
 static float temperature = 20.0;
 
 // HVAC
-static int active_hvac = 0; // 0: OFF, 1: HVAC1 ON, 2: HVAC2 ON
+static int active_hvac = OFF;
 //----------------------------FUNCTIONS DEFINITIONS----------------------------------//
 static float fake_temp_sensing(float temperature);
 static void manage_hvac();
@@ -95,8 +97,14 @@ static void manage_hvac()
     float off_threshold = min_temp_user + (max_temp_user - min_temp_user)/4;
     float hvac1_threshold  = min_temp_user + 2*(max_temp_user - min_temp_user)/4;
     float hvac2_threshold  = max_temp_user - (max_temp_user - min_temp_user)/4;
+    LOG_INFO("[Climate-manager] HVAC data:\n");
+    LOG_INFO("[Climate-manager] \t-variation: %f\n", variation);
+    LOG_INFO("[Climate-manager] \t-off_threshold: %f\n", off_threshold);
+    LOG_INFO("[Climate-manager] \t-hvac1_threshold: %f\n", hvac1_threshold);
+    LOG_INFO("[Climate-manager] \t-hvac2_threshold: %f\n", hvac2_threshold);
+
     // if the temperature is increasing
-    if(variation > 0)
+    if(variation < 0)
     {
         // Control if the HVAC is active
         switch (active_hvac)

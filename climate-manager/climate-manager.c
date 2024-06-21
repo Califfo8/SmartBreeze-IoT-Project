@@ -133,7 +133,7 @@ static void solar_energy_callback(coap_observee_t *obs, void *notification, coap
     case NOTIFICATION_OK:
         LOG_INFO("\t Start parsing the payload\n");
         parse_str((char*)buffer, &payload);
-        //print_json_senml(&payload);
+        print_json_senml(&payload);
         // Update the predicted energy
         predicted_energy = payload.measurement_data[0].v.v;
         // Update the sampled energy
