@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "../Utility/RandomNumberGenerator/RandomNumberGenerator.h"
 #include "../Utility/JSONSenML/JSONSenML.h"
-
+#include "../Utility/Timestamp/Timestamp.h"
 //----------------------------------PARAMETERS----------------------------------//
 //[+] LOG CONFIGURATION
 #define LOG_MODULE "App"
@@ -34,17 +34,23 @@ float min_temp_user = MIN_TEMP_USER;
 float hvac1_power_cons = HVAC1_POWER_CONS;
 float hvac2_power_cons = HVAC2_POWER_CONS;
 
-//[+] DERIVATED PARAMETERS
-float low_trashold = 0.1;
 
+//[+] OBSERVED PARAMETERS
+extern float sampled_energy;
+extern float predicted_energy;
+extern Timestamp last_update;
+
+//[+] DECISION PARAMETERS
+static float old_temperature = 20.0;
 //----------------------------------RESOURCES----------------------------------//
 // Sampled temperature
 static float temperature = 20.0;
-// Active HVAC
+
+// HVAC
 static int active_hvac = 0; // 0: OFF, 1: HVAC1 ON, 2: HVAC2 ON
 //----------------------------FUNCTIONS DEFINITIONS----------------------------------//
 static float fake_temp_sensing(float temperature);
-//static void manage_hvac(float temperature);
+static void manage_hvac();
 void res_get_handler(coap_message_t *request, coap_message_t *response,
                           uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 static void res_event_handler(void);
@@ -81,22 +87,97 @@ static float fake_temp_sensing(float temperature)
   return 0;
         
 }
-/*
-static void manage_hvac(float temperature)
-{
 
-    if(temperature > max_temp_user)
+static void manage_hvac()
+{
+    // Compute the variation of the temperature
+    float variation = (1 - temperature/old_temperature);
+    float off_threshold = min_temp_user + (max_temp_user - min_temp_user)/4;
+    float hvac1_threshold  = min_temp_user + 2*(max_temp_user - min_temp_user)/4;
+    float hvac2_threshold  = max_temp_user - (max_temp_user - min_temp_user)/4;
+    // if the temperature is increasing
+    if(variation > 0)
     {
-        active_hvac = HVAC2;
-    }else if(temperature < min_temp_user)
-    {
-        active_hvac = HVAC1;
+        // Control if the HVAC is active
+        switch (active_hvac)
+        {
+        case OFF:
+            if(predicted_energy >= hvac1_power_cons || temperature >= hvac1_threshold)
+            {
+                active_hvac = HVAC1;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
+            }
+            else if(predicted_energy >= hvac2_power_cons || temperature >= hvac2_threshold)
+            {
+                active_hvac = HVAC2;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac); 
+            }          
+            break;
+        case HVAC1:
+            if(predicted_energy < hvac1_power_cons || temperature <= off_threshold)
+            {
+                active_hvac = OFF;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
+            }
+            else if(predicted_energy >= hvac2_power_cons || temperature >= hvac2_threshold)
+            {
+                active_hvac = HVAC2;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
+            }        
+            break;
+        case HVAC2:
+            if(predicted_energy < hvac2_power_cons || temperature <= off_threshold)
+            {
+                active_hvac = OFF;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
+            }                
+            else if((predicted_energy >= hvac1_power_cons && predicted_energy < hvac2_power_cons) || temperature < hvac2_threshold)
+            {
+                active_hvac = HVAC1;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
+            }         
+            break;
+        default:
+            break;
+        }
+        
     }else
     {
-        active_hvac = OFF;
+        switch (active_hvac)
+        {
+        case OFF:        
+            break;
+        case HVAC1:
+            if(predicted_energy < hvac1_power_cons || temperature <= off_threshold)
+            {
+                active_hvac = OFF;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
+            }
+            else if(predicted_energy >= hvac2_power_cons)
+            {
+                active_hvac = HVAC2;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
+            }        
+            break;
+        case HVAC2:
+            if(predicted_energy < hvac2_power_cons || temperature <= off_threshold)
+            {
+                active_hvac = OFF;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
+            }                
+            else if((predicted_energy >= hvac1_power_cons && predicted_energy < hvac2_power_cons))
+            {
+                active_hvac = HVAC1;
+                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
+            }         
+            break;
+        default:
+            break;
+        }
     }
+    
 
-}*/
+}
 
 /* Define the resource handler function */
 void res_get_handler(coap_message_t *request, coap_message_t *response,
@@ -116,11 +197,12 @@ void res_get_handler(coap_message_t *request, coap_message_t *response,
 
 static void res_event_handler(void) {
     LOG_INFO("[Climate-manager] New sample \n");
-    // Sample the solar energy
+    // Sample the temperature
+    old_temperature = temperature;
     temperature = fake_temp_sensing(temperature);
     LOG_INFO("[Energy-manager] \t-Sampled Temperature: %f\n", temperature);
     // Making Decision
-    
+    manage_hvac();
     // Notify the observers
     coap_notify_observers(&res_temperature_HVAC);
 }

@@ -40,6 +40,9 @@ static coap_observee_t* solar_energy_res;
 #define SAMPLING_PERIOD 10 // in seconds
 int sampling_period = 10; //3600 * h_sampling_period; in seconds
 
+//[+] OBSERVED RESOURCE
+float sampled_energy = -1;
+float predicted_energy = -1;
 //[+] TIMERS
 #define SLEEP_INTERVAL 30 // in seconds
 static struct etimer sleep_timer;
@@ -122,18 +125,21 @@ static void solar_energy_callback(coap_observee_t *obs, void *notification, coap
     payload.measurement_data[1].time = time[1];
 
     const uint8_t *buffer = NULL;
-    int buffer_size = 0;
     if(notification){
-        buffer_size = coap_get_payload(notification, &buffer);
+        coap_get_payload(notification, &buffer);
     }
-    char buffer_str[buffer_size + 1];
+
     switch (flag) {
     case NOTIFICATION_OK:
-        strncpy(buffer_str, (char*)buffer, buffer_size);
         LOG_INFO("\t Start parsing the payload\n");
-        LOG_INFO("\t Payload: %s\n", buffer_str);
-        parse_str(buffer_str, &payload);
-        print_json_senml(&payload);
+        parse_str((char*)buffer, &payload);
+        //print_json_senml(&payload);
+        // Update the predicted energy
+        predicted_energy = payload.measurement_data[0].v.v;
+        // Update the sampled energy
+        sampled_energy = payload.measurement_data[1].v.v;
+        LOG_INFO("\t Sampled energy: %.2f\n", sampled_energy);
+
         break;
     case OBSERVE_OK:
         LOG_INFO("\t Observe OK\n");

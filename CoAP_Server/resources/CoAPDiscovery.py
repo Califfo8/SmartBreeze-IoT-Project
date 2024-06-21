@@ -18,7 +18,7 @@ class CoAPDiscovery(Resource):
         client = HelperClient(server=(host, port))
         response = client.get(resource)
         client.stop()
-        print("\t\t Response: {}".format(response))
+        print("\t\t Response: {}".format(response.payload))
         if response is None or response.code != defines.Codes.CONTENT.number:
             return False
         else:

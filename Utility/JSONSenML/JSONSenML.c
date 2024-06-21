@@ -57,7 +57,7 @@ int json_to_payload(json_senml* js, char* payload)
         strcat(payload, comodo);
     }
     strcat(payload, "}");
-    return sizeof(payload);
+    return strlen(payload);
 }
 
 int copy_value (char *string, char *output, char *start, char *end)
@@ -65,7 +65,7 @@ int copy_value (char *string, char *output, char *start, char *end)
 
   char *start_ptr = strstr(string, start);
   char *end_ptr = strstr(string, end);
-    LOG_INFO("Start: %s\n End: %s\n\n", start_ptr, end_ptr);
+  //LOG_INFO("Start: %s\n End: %s\n\n", start_ptr, end_ptr);
 
   if (start_ptr == NULL || end_ptr == NULL)
 	{

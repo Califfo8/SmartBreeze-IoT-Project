@@ -141,29 +141,27 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
    
     MeasurementData data[2];
     json_senml js_senml;
-    char name1[] = "predicted";
-    char name2[] = "sampled";
-    char timestamp_str_1[TIMESTAMP_STRING_LEN];
-    char timestamp_str_2[TIMESTAMP_STRING_LEN];
+    char names[2][MAX_STR_LEN] = {"predicted", "sampled"};
+    char timestamp_str[2][TIMESTAMP_STRING_LEN];
     char base_name[BASE_NAME_LEN];
     int payload_len = 0;
     
     //Creo il timestamp
-    timestamp_to_string(&timestamp, timestamp_str_1);
-    strcpy(timestamp_str_2, timestamp_str_1);
+    timestamp_to_string(&timestamp, timestamp_str[0]);
+    strcpy(timestamp_str[1], timestamp_str[0]);
     // Create the base name
     get_base_name(base_name);
      
     // Inizializzo i valori delle risorse
-    data[0].name = name1;
+    data[0].name = names[0];
     data[0].unit = UNIT;
-    data[0].time = timestamp_str_1;
+    data[0].time = timestamp_str[0];
     data[0].v.v = predicted_energy;
     data[0].type = V_FLOAT;
 
-    data[1].name = name2;
+    data[1].name = names[1];
     data[1].unit = UNIT;
-    data[1].time = timestamp_str_2;
+    data[1].time = timestamp_str[1];
     data[1].v.v = sampled_energy;
     data[1].type = V_FLOAT;
 
@@ -199,7 +197,7 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
     coap_set_payload(response, buffer, payload_len);
 
     // Print sended data for debug
-    LOG_INFO("\t Sending data: %s\n", buffer);
+    LOG_INFO("\t Sending data: %s with size: %d\n", buffer, payload_len);
 }
 
 static void res_event_handler(void) {
