@@ -79,8 +79,8 @@ function create_db(){
 
     mysql_cmd "CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.solar_production 
     (timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    sampled FLOAT, 
-    predicted FLOAT,
+    sampled FLOAT DEFAULT NULL, 
+    predicted FLOAT DEFAULT NULL,
     PRIMARY KEY (timestamp));"
 
     mysql_cmd "CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.temperature 

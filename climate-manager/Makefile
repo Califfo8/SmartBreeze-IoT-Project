@@ -6,6 +6,7 @@ PLATFORMS_EXCLUDE = sky z1
 # Include CoAP resources
 MODULES_REL += ../Utility/RandomNumberGenerator
 MODULES_REL += ../Utility/JSONSenML
+MODULES_REL += ../Utility/Timestamp
 MODULES_REL+=./resources
 
 CONTIKI=../../..

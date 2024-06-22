@@ -70,6 +70,8 @@ AUTOSTART_PROCESSES(&energy_manager_process);
 PROCESS_THREAD(energy_manager_process, ev, data)
 {
   PROCESS_BEGIN();
+  // Activate the solar energy resource
+  coap_activate_resource(&res_solar_energy,"solar_energy");
   //------------------[1]-CoAP-Server-Registration-------------------------------//
    static coap_endpoint_t server_ep;
     static coap_message_t request[1]; // This way the packet can be treated as pointer as usual
@@ -95,8 +97,7 @@ PROCESS_THREAD(energy_manager_process, ev, data)
   //------------------------[2]-Energy-Sensing----------------------------------//
 
   LOG_INFO("[Energy-manager] Started\n");
-  // Activate the solar energy resource
-  coap_activate_resource(&res_solar_energy,"solar_energy");
+  
   // Sensing interval
   etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
   do

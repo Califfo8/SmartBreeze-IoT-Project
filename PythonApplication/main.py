@@ -6,7 +6,6 @@ if __name__ == '__main__':
     server = CoAPServer(ip, port)
     
     try:
-        print("CoAP Server Started")
         server.listen(10)
     except KeyboardInterrupt:
         print("Server Shutdown")

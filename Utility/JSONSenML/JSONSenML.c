@@ -30,8 +30,13 @@ void get_base_name(char *mac_str) {
 int json_to_payload(json_senml* js, char* payload)
 {
     char comodo[MAX_PAYLOAD_LEN] = "";
+    // Save the current locale
+    char *current_locale = setlocale(LC_NUMERIC, NULL);
+    // Set the locale to "C" to avoid problems with the decimal separator
+    setlocale(LC_NUMERIC, "C");
+
     // Creo il base name con il mac
-    sprintf(payload, "{{\"bn\":\"%s\",\"bu\":\"%s\"},", js->base_name, js->base_unit);
+    sprintf(payload, "[{\"bn\":\"%s\",\"bu\":\"%s\"},", js->base_name, js->base_unit);
     for (int i = 0; i < js->num_measurements; i++)
     {
         sprintf(comodo, "{\"n\":\"%s\",\"u\":\"%s\",\"t\":\"%s\",\"v\":", 
@@ -42,21 +47,27 @@ int json_to_payload(json_senml* js, char* payload)
         if (js->measurement_data[i].type == V_FLOAT)
         {
 
-            sprintf(comodo, "%f},", js->measurement_data[i].v.v);
+            sprintf(comodo, "%f}", js->measurement_data[i].v.v);
         }
         else if (js->measurement_data[i].type == V_INT)
         {
-            sprintf(comodo, "%d},", js->measurement_data[i].v.vd);
+            sprintf(comodo, "%d}", js->measurement_data[i].v.vd);
         }
         else if (js->measurement_data[i].type == V_STRING)
         {
-            sprintf(comodo, "\"%s\"},", js->measurement_data[i].v.vs);
+            sprintf(comodo, "\"%s\"}", js->measurement_data[i].v.vs);
         }else{
             return -1;
         }
+        if (i < js->num_measurements - 1)
+        {
+            strcat(comodo, ",");
+        }
         strcat(payload, comodo);
     }
-    strcat(payload, "}");
+    strcat(payload, "]");
+    // Restore the original locale
+    setlocale(LC_NUMERIC, current_locale);
     return strlen(payload);
 }
 

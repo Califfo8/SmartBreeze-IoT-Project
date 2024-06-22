@@ -37,8 +37,17 @@ static const char *service_discovery_url = "/discovery";
 static coap_endpoint_t energy_manager_ep;
 static coap_observee_t* solar_energy_res;
 //[+] TIME PARAMETERS
-#define SAMPLING_PERIOD 10 // in seconds
+#define SAMPLING_PERIOD 1 // in hours
+int h_sampling_period = SAMPLING_PERIOD;
 int sampling_period = 10; //3600 * h_sampling_period; in seconds
+
+Timestamp timestamp = {
+  .year = 2024,
+  .month = 7,
+  .day = 15,
+  .hour = 5,
+  .minute = 0
+};// DOPO DEVE ESSERE RICHIESTO ALL'APPLICAZIONE CLOUD
 
 //[+] OBSERVED RESOURCE
 float sampled_energy = -1;
@@ -166,6 +175,8 @@ PROCESS_THREAD(climate_manager_process, ev, data)
 {
   
   PROCESS_BEGIN();
+  // Activate the temperature resource
+  coap_activate_resource(&res_temperature_HVAC,"temperature_HVAC");
   //------------------[1]-CoAP-Server-Registration-------------------------------//
     static coap_endpoint_t server_ep;
     static coap_message_t request[1]; // This way the packet can be treated as pointer as usual
@@ -218,8 +229,7 @@ PROCESS_THREAD(climate_manager_process, ev, data)
 
   //------------------------[3]-Climate-Management----------------------------------//
   LOG_INFO("[Climate-manager] Climate manager started\n");
-  // Activate the temperature resource
-  coap_activate_resource(&res_temperature_HVAC,"temperature_HVAC");
+  
   etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
   do
   {
@@ -229,6 +239,8 @@ PROCESS_THREAD(climate_manager_process, ev, data)
     {
       // Sense the temperature and manage the HVAC
       res_temperature_HVAC.trigger();
+      // Update the timestamp
+      advance_time(&timestamp, h_sampling_period);
       // Wait for the next sensing interval
       etimer_reset(&sleep_timer);
     }   

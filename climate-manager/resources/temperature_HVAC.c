@@ -40,7 +40,7 @@ float hvac2_power_cons = HVAC2_POWER_CONS;
 //[+] OBSERVED PARAMETERS
 extern float sampled_energy;
 extern float predicted_energy;
-extern Timestamp last_update;
+extern Timestamp timestamp;
 
 //[+] DECISION PARAMETERS
 static float old_temperature = 20.0;
@@ -190,17 +190,65 @@ static void manage_hvac()
 /* Define the resource handler function */
 void res_get_handler(coap_message_t *request, coap_message_t *response,
                           uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-        char message[12];
-        int length = 12;
+    LOG_INFO("[Energy-manager] GET request arrived:\n");
+   
+    MeasurementData data[2];
+    json_senml js_senml;
+    char names[2][MAX_STR_LEN] = {"temperature", "HVAC"};
+    char timestamp_str[2][TIMESTAMP_STRING_LEN];
+    char base_name[BASE_NAME_LEN];
+    int payload_len = 0;
+    
+    //Creo il timestamp
+    timestamp_to_string(&timestamp, timestamp_str[0]);
+    strcpy(timestamp_str[1], timestamp_str[0]);
+    // Create the base name
+    get_base_name(base_name);
+     
+    // Inizializzo i valori delle risorse
+    data[0].name = names[0];
+    data[0].unit = UNIT;
+    data[0].time = timestamp_str[0];
+    data[0].v.v = temperature;
+    data[0].type = V_FLOAT;
 
-        snprintf(message, length, "%f", temperature);
+    data[1].name = names[1];
+    data[1].unit = "None";
+    data[1].time = timestamp_str[1];
+    data[1].v.v = active_hvac;
+    data[1].type = V_INT;
 
-        // Prepare the response
-        // Copy the response in the transmission buffer
-        memcpy(buffer, message, length);
-        coap_set_header_content_format(response, TEXT_PLAIN);
-        coap_set_header_etag(response, (uint8_t *)&length, 1);
-        coap_set_payload(response, buffer, length);
+    // Creo il JSON SenML
+    js_senml.base_name = base_name;
+    js_senml.base_unit = UNIT;
+    js_senml.measurement_data = data;
+    js_senml.num_measurements = 2;
+
+    // Convert the JSON SenML to a payload
+    LOG_INFO(" \t Getting the payload...\n");
+    payload_len = json_to_payload(&js_senml, (char*)buffer);
+   
+    if (payload_len < 0)
+    {
+      LOG_ERR("\t Error in the json_to_payload function\n");
+      coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
+      coap_set_payload(response, buffer, 0);
+      return;
+    }else if (payload_len > preferred_size)
+    {
+      LOG_ERR("\t Buffer overflow\n");
+      coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
+      coap_set_payload(response, buffer, 0);
+      return;
+    }
+
+    // Prepare the response
+    coap_set_header_content_format(response, APPLICATION_JSON);
+    coap_set_header_etag(response, (uint8_t *)&payload_len, 1);
+    coap_set_payload(response, buffer, payload_len);
+
+    // Print sended data for debug
+    LOG_INFO("\t Sending data: %s with size: %d\n", buffer, payload_len);
 }
 
 static void res_event_handler(void) {

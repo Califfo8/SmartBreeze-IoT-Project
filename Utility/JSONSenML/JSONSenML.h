@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "sys/log.h"
+#include <locale.h>
 #ifndef COOJA
 #include <nrfx.h>
 #endif

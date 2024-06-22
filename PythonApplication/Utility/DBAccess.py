@@ -1,10 +1,12 @@
 import mysql.connector
+
 class DBAccess():
-    def __init__(self, host, user, password, database):
+    def __init__(self, host, user, password, database, log):
         self.host = host
         self.user = user
         self.password = password
         self.database = database
+        self.log = log
 
         self.mydb = None
         self.mycursor = None
@@ -21,7 +23,7 @@ class DBAccess():
             # Create a cursor object to execute SQL queries
             self.mycursor = self.mydb.cursor()
         except Exception as e:
-            print("[ERROR] Could not connect to the database: {}".format(e))
+            self.log.error("Could not connect to the database: {}".format(e))
             return None
         return True
     
@@ -33,14 +35,14 @@ class DBAccess():
     def query(self, query, val, fetchall=False):
         """Query the database with the given query and values, return the result of the query if it is a SELECT query, otherwise return True if the query was successful."""
         if self.mydb is None:
-            print("[ERROR] Database connection is not established")
+            self.log.error("Database connection is not established")
             return None
 
         try:
             # Execute the SQL query
             self.mycursor.execute(query, val)
         except Exception as e:
-            print("[ERROR] Could not execute the query: {}".format(e))
+            self.log.error("Could not execute the query: {}".format(e))
             self.mydb.close()
             return None
 
