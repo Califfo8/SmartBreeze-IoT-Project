@@ -6,34 +6,38 @@ import coapthon.defines as defines
 from configparser import ConfigParser
 from CoAPServer.CoAPObserver import CoAPObserver
 from Utility.Log import Log
+from datetime import datetime
+log_istance = Log(__name__, "Unknow")
+log = log_istance.get_logger()
 
 class NodeRegistration(Resource):
 
     def __init__(self, name="Node Registration"):
         super(NodeRegistration, self).__init__(name)
         self.payload = "Registered"
-        self.json_register_schema = {
+        
+    def render_POST(self, request):
+        res = NodeRegistration()
+        json_register_schema = {
                     "node" : {"type" : "string"},
                     "resource" : {"type" : "string"}
                     }   
 
-    def render_POST(self, request):
-        res = NodeRegistration()
         res.location_query = request.uri_query
-        log = Log("NodeRegistration", request.payload).get_logger()
+        log.info("Node Registration POST request received from: {}".format(request.source[0]))
         #Verify the JSON payload
         try:
             node_info = json.loads(request.payload)
-            validate(instance=node_info, schema=self.json_register_schema)
+            validate(instance=node_info, schema=json_register_schema)
         except ValidationError as e:
             log.error("JSON is not valid: ", e.message)
             log.error("\t - BAD JSON:", node_info)
             return None
-        except:
-            log.error("[ERROR] BAD PAYLOAD:", request.payload)
+        except Exception as e:
+            log.error("BAD PAYLOAD:", e)
             return None
-        
-        log.info("Node Registration POST: {}".format(node_info["node"]))
+        log_istance.set_resource(node_info["node"])
+        log.info("Node Registration POST source recognized")
         # Insert the node information into the database
         query = "REPLACE INTO nodes (ip, name ,resource, status) VALUES (%s, %s, %s, %s)"
         val = (request.source[0], node_info["node"], str(node_info["resource"]), 'ACTIVE')
@@ -57,5 +61,8 @@ class NodeRegistration(Resource):
         log.info("Starting observation of the resource: {} from {}".format(node_info["resource"], request.source[0]))
         observer = CoAPObserver(request.source[0], node_info["resource"])
         observer.start()
-
+        log_istance.set_resource("Unknow")
+        timestamp = datetime.now()
+        res.payload = timestamp.strftime("%Y-%m-%dT%H:%MZ")
+        log.info(res.payload)
         return res

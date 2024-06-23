@@ -92,6 +92,11 @@ static float fake_temp_sensing(float temperature)
 
 static void manage_hvac()
 {
+    if(sampled_energy == -1 || predicted_energy == -1)
+    {
+        LOG_ERR("[Climate-manager] Energy parameters not arrived\n");
+        return;
+    }
     // Compute the variation of the temperature
     float variation = (1 - temperature/old_temperature);
     float off_threshold = min_temp_user + (max_temp_user - min_temp_user)/4;

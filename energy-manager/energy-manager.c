@@ -51,6 +51,11 @@ void registration_chunk_handler(coap_message_t *response)
         LOG_ERR("[Energy-manager] Error: %d\n",response->code);
     }else{
         LOG_INFO("successful node registration\n");
+        // Extract the timestamp from the response
+        char str_timestamp[TIMESTAMP_STRING_LEN];
+        strncpy(str_timestamp, (char*)response->payload, response->payload_len);
+        string_to_timestamp(str_timestamp, &timestamp);
+        
         max_register_attempts = 0; // Stop the registration attempts
         return;
     }

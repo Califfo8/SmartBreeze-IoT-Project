@@ -71,6 +71,14 @@ void registration_chunk_handler(coap_message_t *response)
         LOG_ERR("[Climate-manager] Error: %d\n",response->code);
     }else{
         LOG_INFO("[Climate-manager] Successful node registration\n");
+        // Extract the timestamp from the response
+        char str_timestamp[TIMESTAMP_STRING_LEN];
+        const uint8_t *buffer = NULL;
+        coap_get_payload(response, &buffer);
+        LOG_INFO("[Climate-manager] Initiliaze timestamp: %s\n", (char *)buffer);
+        strncpy(str_timestamp, (char *)buffer, response->payload_len);
+        string_to_timestamp(str_timestamp, &timestamp);
+
         max_attempts = 0; // Stop the registration attempts
         return;
     }
@@ -142,7 +150,7 @@ static void solar_energy_callback(coap_observee_t *obs, void *notification, coap
     case NOTIFICATION_OK:
         LOG_INFO("\t Start parsing the payload\n");
         parse_str((char*)buffer, &payload);
-        print_json_senml(&payload);
+        //print_json_senml(&payload);
         // Update the predicted energy
         predicted_energy = payload.measurement_data[0].v.v;
         // Update the sampled energy

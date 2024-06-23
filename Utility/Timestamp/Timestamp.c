@@ -70,5 +70,15 @@ void timestamp_to_string(Timestamp* ts, char* string)
   else
     sprintf(str_hour, "%d", ts->hour);
   
+  if (ts->minute < 10)
+    sprintf(str_hour, "0%d", ts->hour);
+  else
+    sprintf(str_hour, "%d", ts->hour);
+  
   sprintf(string, "%d-%s-%sT%s:%sZ", ts->year, str_month, str_day, str_hour, str_minute);
+}
+
+void string_to_timestamp(char* string, Timestamp* ts)
+{
+  sscanf(string, "%d-%d-%dT%d:%dZ", &ts->year, &ts->month, &ts->day, &ts->hour, &ts->minute);
 }

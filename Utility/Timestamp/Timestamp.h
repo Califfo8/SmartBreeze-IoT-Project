@@ -17,4 +17,5 @@ void advance_time(Timestamp* ts, int hours);
 void convert_to_feature(Timestamp* ts, float* float_ts);
 void copy_timestamp(Timestamp* ts, Timestamp* new_ts);
 void timestamp_to_string(Timestamp* ts, char* string);
+void string_to_timestamp(char* string, Timestamp* ts);
 #endif // TIMESTAMP_H

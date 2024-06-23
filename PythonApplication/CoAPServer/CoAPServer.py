@@ -2,10 +2,11 @@
 from coapthon.server.coap import CoAP
 from CoAPServer.resources.NodeRegistration import NodeRegistration
 from CoAPServer.resources.CoAPDiscovery import CoAPDiscovery
-import logging
+from Utility.Log import Log
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(name)s - %(message)s')
-log = logging.getLogger("CoAPServer")
+log_istance = Log(__name__, "EXP:Registration/Discovery")
+log = log_istance.get_logger()
+
 class CoAPServer(CoAP):
     def __init__(self, host, port):
         CoAP.__init__(self, (host, port), multicast=False)
