@@ -43,7 +43,6 @@ class DBAccess():
             self.mycursor.execute(query, val)
         except Exception as e:
             self.log.error("Could not execute the query: {}".format(e))
-            self.mydb.close()
             return None
 
         # Check if the query is a SELECT query

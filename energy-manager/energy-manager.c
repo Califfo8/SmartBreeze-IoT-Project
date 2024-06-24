@@ -48,9 +48,9 @@ void registration_chunk_handler(coap_message_t *response)
         LOG_ERR("Request timed out\n");
     }  else if (response->code !=65)
     {
-        LOG_ERR("[Energy-manager] Error: %d\n",response->code);
+        LOG_ERR("[Energy-manager] Error in registration: %d\n",response->code);
     }else{
-        LOG_INFO("successful node registration\n");
+        LOG_INFO("[Energy-manager] Successful node registration\n");
         // Extract the timestamp from the response
         char str_timestamp[TIMESTAMP_STRING_LEN];
         strncpy(str_timestamp, (char*)response->payload, response->payload_len);

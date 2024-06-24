@@ -95,14 +95,14 @@ void discovery_chunk_handler(coap_message_t *response)
 {
   const uint8_t *buffer = NULL;
     if(response == NULL) {
-        LOG_ERR("\t Request timed out \n");
+        LOG_ERR("[Climate-manager]Request timed out \n");
     } else if (response->code !=69)
     {
-        LOG_ERR("\t Error: %d\n",response->code);
+        LOG_ERR("[Climate-manager] Error IN DISCOVERY: %d\n",response->code);
     }else{
         coap_get_payload(response, &buffer);
         strncpy(ip_energy_manager, (char *)buffer, response->payload_len);
-        LOG_INFO("\t Successful node discovery: %s \n",ip_energy_manager);
+        LOG_INFO("[Climate-manager] Successful node discovery: %s \n",ip_energy_manager);
         max_attempts = 0; // Stop the discovery attempts
         return;
     }
@@ -148,28 +148,28 @@ static void solar_energy_callback(coap_observee_t *obs, void *notification, coap
 
     switch (flag) {
     case NOTIFICATION_OK:
-        LOG_INFO("\t Start parsing the payload\n");
+        
         parse_str((char*)buffer, &payload);
         //print_json_senml(&payload);
         // Update the predicted energy
         predicted_energy = payload.measurement_data[0].v.v;
         // Update the sampled energy
         sampled_energy = payload.measurement_data[1].v.v;
-        LOG_INFO("\t Sampled energy: %.2f\n", sampled_energy);
+        LOG_INFO("[Climate-manager] Sampled energy recived: %.2f\n", sampled_energy);
 
         break;
     case OBSERVE_OK:
-        LOG_INFO("\t Observe OK\n");
+        LOG_INFO("[Climate-manager] Observe OK\n");
         
         break;
     case OBSERVE_NOT_SUPPORTED:
-        LOG_INFO("\t Observe not supported\n");
+        LOG_ERR("[Climate-manager] Observe not supported\n");
         break;
     case ERROR_RESPONSE_CODE:
-        LOG_INFO("\t Error response code\n");
+        LOG_ERR("[Climate-manager] Error response code\n");
         break;
     case NO_REPLY_FROM_SERVER:
-        LOG_INFO("\t No reply from server\n");
+        LOG_ERR("[Climate-manager] No reply from server\n");
         break;
     }
     

@@ -28,13 +28,17 @@ class CoAPObserver:
         db_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         val = (time.year, time.month, time.day, time.hour)
         result = db.query(search_query, val, True)
+        if result is None:
+            log.error("Failed to find the data in the database")
+            return None
+        
         #If the data is present, update it
         if result[0][0] != 0:
             val = (data[index]["v"], time.year, time.month, time.day, time.hour)
-            db.query(update_query, val, False)
+            ret = db.query(update_query, val, False)
         else:# Otherwise insert the data
             val = (db_timestamp, data[index]["v"])
-            db.query(insert_query, val, False)
+            ret = db.query(insert_query, val, False)
 
     def callback_observe(self, response):
         log_istance.set_resource(self.resource)
@@ -56,6 +60,10 @@ class CoAPObserver:
 
         try:
             data = json.loads(response.payload)
+        except json.JSONDecodeError as e:
+            log.error("Failed to decode JSON: {}".format(e.msg))
+            log.error("Bad JSON: {}".format(response.payload))
+            return None
         except Exception as e:
             log.error("BAD JSON:", e)
             return None
@@ -72,10 +80,13 @@ class CoAPObserver:
 
         elif self.resource == 'temperature_HVAC':
             self.query = "INSERT INTO temperature (timestamp, temperature, active_HVAC) VALUES (%s,%s, %s)"
-            time = datetime.strptime(data[index]["t"], self.date_format)
+            time = datetime.strptime(data[1]["t"], self.date_format)
             db_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             val = (db_timestamp, data[1]["v"], data[2]["v"])
-            database.query(self.query, val, False)
+            ret = database.query(self.query, val, False)
+            if ret is None:
+                log.error("Failed to insert temperature information into the database")
+                return None
             log.info("Updated temperature")
         
         self.last_response = response

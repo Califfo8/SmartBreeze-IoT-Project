@@ -45,23 +45,31 @@ class CoAPDiscovery(Resource):
         
         query = "SELECT COUNT(*) FROM nodes WHERE resource = %s AND status = 'ACTIVE'"
         val = (request.payload,)
+
         node_ip = database.query(query, val, True)
-        
         if node_ip is None:
+            database.close()
             return None
+        
         elif node_ip[0][0] <=0:
             log.error("Resource not found:{}".format(node_ip[0][0]))
             return None
         # If the resource is found, return the ip address
         query = "SELECT ip FROM nodes WHERE resource = %s AND status = 'ACTIVE'"
         node_ip = database.query(query, val, True)
+        if node_ip is None:
+            database.close()
+            return None
         
         # Ping the node to check if it is active
         log.info("Checking resource: {} at {}:{}: ".format(request.payload, request.payload, 5683))
         if not self.check_resource(node_ip[0][0], 5683, request.payload):
             log.info("Resource not found: node or resource is inactive. Updating the database")
             query = "UPDATE nodes SET Status ='DEACTIVATED'  WHERE resource = %s"
+            node_ip = database.query(query, val, True)
+            database.close()
             return None
+        
         # Close the database connection
         database.close()
 

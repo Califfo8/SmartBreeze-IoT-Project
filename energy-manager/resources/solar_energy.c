@@ -127,8 +127,8 @@ static float predict_solar_energy()
     if (prediction < 0)
       prediction = 0;
     //log information
-    LOG_INFO("\t -Correction Factor: %f\n", correction_factor);
-    LOG_INFO("\t -Predicted Solar energy: %f\n", prediction);   
+    LOG_DBG("[Energy-manager] Correction Factor: %f\n", correction_factor);
+    LOG_DBG("[Energy-manager] Predicted Solar energy: %f\n", prediction);   
     return prediction;
 }
 
@@ -137,7 +137,7 @@ static float predict_solar_energy()
 static void res_get_handler(coap_message_t *request, coap_message_t *response,
                           uint8_t *buffer, uint16_t preferred_size, int32_t *offset){
     
-    LOG_INFO("[Energy-manager] GET request arrived:\n");
+    LOG_INFO("[Energy-manager]//--------------NEW-GET-SOLAR-REQUEST---------------------\n");
    
     MeasurementData data[2];
     json_senml js_senml;
@@ -172,7 +172,6 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
     js_senml.num_measurements = 2;
 
     // Convert the JSON SenML to a payload
-    LOG_INFO(" \t Getting the payload...\n");
     payload_len = json_to_payload(&js_senml, (char*)buffer);
    
     if (payload_len < 0)
@@ -197,19 +196,20 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
     coap_set_payload(response, buffer, payload_len);
 
     // Print sended data for debug
-    LOG_INFO("\t Sending data: %s with size: %d\n", buffer, payload_len);
+    LOG_INFO("[Energy-manager] Sending data: %s with size: %d\n", buffer, payload_len);
 }
 
 static void res_event_handler(void) {
     char timestamp_str[TIMESTAMP_STRING_LEN];
     timestamp_to_string(&timestamp, timestamp_str);
+    LOG_INFO("[Energy-manager] -------------------NEW-EVENT--------------\n");
     LOG_INFO("[Energy-manager] New sample at time %s\n", timestamp_str);
     // Sample the solar energy
     sampled_energy = fake_solar_sensing(sampled_energy);
-    LOG_INFO("\t-Sampled Solar energy: %f", sampled_energy);
+    LOG_INFO("[Energy-manager] -Sampled Solar energy: %f", sampled_energy);
     // Predict the solar energy
     predicted_energy = predict_solar_energy();
     // Notify the observers
-    LOG_INFO("\t-Notifing the observers\n");
+    LOG_INFO("[Energy-manager] -Notifing the observers\n");
     coap_notify_observers(&res_solar_energy);
 }

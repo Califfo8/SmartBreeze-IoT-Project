@@ -12,7 +12,7 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 //[+] TEMPERATURE PARAMETERS
-#define UNIT "C°"
+#define UNIT "C"
 #define OFF 0
 #define HVAC1 1
 #define HVAC2 2
@@ -102,11 +102,11 @@ static void manage_hvac()
     float off_threshold = min_temp_user + (max_temp_user - min_temp_user)/4;
     float hvac1_threshold  = min_temp_user + 2*(max_temp_user - min_temp_user)/4;
     float hvac2_threshold  = max_temp_user - (max_temp_user - min_temp_user)/4;
-    LOG_INFO("[Climate-manager] HVAC data:\n");
-    LOG_INFO("[Climate-manager] \t-variation: %f\n", variation);
-    LOG_INFO("[Climate-manager] \t-off_threshold: %f\n", off_threshold);
-    LOG_INFO("[Climate-manager] \t-hvac1_threshold: %f\n", hvac1_threshold);
-    LOG_INFO("[Climate-manager] \t-hvac2_threshold: %f\n", hvac2_threshold);
+    LOG_DBG("[Climate-manager] HVAC data:\n");
+    LOG_DBG("[Climate-manager] -variation: %f\n", variation);
+    LOG_DBG("[Climate-manager] -off_threshold: %f\n", off_threshold);
+    LOG_DBG("[Climate-manager] -hvac1_threshold: %f\n", hvac1_threshold);
+    LOG_DBG("[Climate-manager] -hvac2_threshold: %f\n", hvac2_threshold);
 
     // if the temperature is increasing
     if(variation < 0)
@@ -118,36 +118,30 @@ static void manage_hvac()
             if(predicted_energy >= hvac1_power_cons || temperature >= hvac1_threshold)
             {
                 active_hvac = HVAC1;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
             }
             else if(predicted_energy >= hvac2_power_cons || temperature >= hvac2_threshold)
             {
-                active_hvac = HVAC2;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac); 
+                active_hvac = HVAC2; 
             }          
             break;
         case HVAC1:
             if(predicted_energy < hvac1_power_cons || temperature <= off_threshold)
             {
                 active_hvac = OFF;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
             }
             else if(predicted_energy >= hvac2_power_cons || temperature >= hvac2_threshold)
             {
                 active_hvac = HVAC2;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
             }        
             break;
         case HVAC2:
             if(predicted_energy < hvac2_power_cons || temperature <= off_threshold)
             {
                 active_hvac = OFF;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
             }                
             else if((predicted_energy >= hvac1_power_cons && predicted_energy < hvac2_power_cons) || temperature < hvac2_threshold)
             {
                 active_hvac = HVAC1;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
             }         
             break;
         default:
@@ -164,24 +158,20 @@ static void manage_hvac()
             if(predicted_energy < hvac1_power_cons || temperature <= off_threshold)
             {
                 active_hvac = OFF;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
             }
             else if(predicted_energy >= hvac2_power_cons)
             {
                 active_hvac = HVAC2;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
             }        
             break;
         case HVAC2:
             if(predicted_energy < hvac2_power_cons || temperature <= off_threshold)
             {
                 active_hvac = OFF;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
             }                
             else if((predicted_energy >= hvac1_power_cons && predicted_energy < hvac2_power_cons))
             {
                 active_hvac = HVAC1;
-                LOG_INFO("[Climate-manager] \t-Active HVAC: %d\n", active_hvac);
             }         
             break;
         default:
@@ -195,8 +185,7 @@ static void manage_hvac()
 /* Define the resource handler function */
 void res_get_handler(coap_message_t *request, coap_message_t *response,
                           uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-    LOG_INFO("[Energy-manager] GET request arrived:\n");
-   
+
     MeasurementData data[2];
     json_senml js_senml;
     char names[2][MAX_STR_LEN] = {"temperature", "HVAC"};
@@ -230,18 +219,17 @@ void res_get_handler(coap_message_t *request, coap_message_t *response,
     js_senml.num_measurements = 2;
 
     // Convert the JSON SenML to a payload
-    LOG_INFO(" \t Getting the payload...\n");
     payload_len = json_to_payload(&js_senml, (char*)buffer);
    
     if (payload_len < 0)
     {
-      LOG_ERR("\t Error in the json_to_payload function\n");
+      LOG_ERR("[Climate-manager] Error in the json_to_payload function\n");
       coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
       coap_set_payload(response, buffer, 0);
       return;
     }else if (payload_len > preferred_size)
     {
-      LOG_ERR("\t Buffer overflow\n");
+      LOG_ERR("[Climate-manager] Buffer overflow\n");
       coap_set_status_code(response, INTERNAL_SERVER_ERROR_5_00);
       coap_set_payload(response, buffer, 0);
       return;
@@ -253,17 +241,18 @@ void res_get_handler(coap_message_t *request, coap_message_t *response,
     coap_set_payload(response, buffer, payload_len);
 
     // Print sended data for debug
-    LOG_INFO("\t Sending data: %s with size: %d\n", buffer, payload_len);
+    LOG_INFO("[Climate-manager] Sending data: %s with size: %d\n", buffer, payload_len);
 }
 
 static void res_event_handler(void) {
-    LOG_INFO("[Climate-manager] New sample \n");
     // Sample the temperature
     old_temperature = temperature;
     temperature = fake_temp_sensing(temperature);
-    LOG_INFO("[Energy-manager] \t-Sampled Temperature: %f\n", temperature);
+    LOG_INFO("[Climate-manager]------------------------NEW-EVENT------------------ \n");
+    LOG_INFO("[Climate-manager] Sampled Temperature: %f\n", temperature);
     // Making Decision
     manage_hvac();
+    LOG_INFO("[Climate-manager] Active HVAC: %d\n", active_hvac);
     // Notify the observers
     coap_notify_observers(&res_temperature_HVAC);
 }
