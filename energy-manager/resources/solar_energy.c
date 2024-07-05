@@ -141,14 +141,24 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
    
     MeasurementData data[2];
     json_senml js_senml;
+    Timestamp future_ts = {
+      .year = timestamp.year,
+      .month = timestamp.month,
+      .day = timestamp.day,
+      .hour = timestamp.hour,
+      .minute = timestamp.minute
+    };
     char names[2][MAX_STR_LEN] = {"predicted", "sampled"};
     char timestamp_str[2][TIMESTAMP_STRING_LEN];
     char base_name[BASE_NAME_LEN];
     int payload_len = 0;
-    
-    //Creo il timestamp
-    timestamp_to_string(&timestamp, timestamp_str[0]);
-    strcpy(timestamp_str[1], timestamp_str[0]);
+        
+    //Timestamp for the future prediction
+    advance_time(&future_ts, future_hours);
+    timestamp_to_string(&future_ts, timestamp_str[0]);
+    //Timestamp for the current sample
+    timestamp_to_string(&timestamp, timestamp_str[1]);
+
     // Create the base name
     get_base_name(base_name);
      

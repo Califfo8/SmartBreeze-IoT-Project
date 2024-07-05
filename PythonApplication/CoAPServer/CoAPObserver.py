@@ -13,16 +13,16 @@ class CoAPObserver:
     def __init__(self, ip, resource):
         self.client = HelperClient(server=(ip, 5683))
         self.resource = resource
-        self.date_format = "%Y-%m-%dT%H:Z"
+        self.date_format = "%Y-%m-%dT%H:%MZ"
         self.last_response = None
 
     def check_and_update(self, type, data, db):
         search_query = "SELECT COUNT(*) FROM solar_production WHERE YEAR(timestamp) = %s AND MONTH(timestamp) = %s AND DAY(timestamp) = %s AND HOUR(timestamp) = %s AND {} IS NULL".format(type)
         insert_query = "INSERT INTO solar_production (timestamp,{}) VALUES (%s,%s)".format(type)
         update_query = "UPDATE solar_production SET {} = %s WHERE YEAR(timestamp) = %s AND MONTH(timestamp) = %s AND DAY(timestamp) = %s AND HOUR(timestamp) = %s".format(type)
-        index = 1
+        index = 2
         if type == "predicted":
-            index = 2    
+            index = 1    
         #Check if the sampled data is already present
         time = datetime.strptime(data[index]["t"], self.date_format)
         db_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")

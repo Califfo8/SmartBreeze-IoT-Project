@@ -49,7 +49,7 @@ void copy_timestamp(Timestamp* ts, Timestamp* new_ts)
   ts->minute = new_ts->minute;
 }
 
-void timestamp_to_string(Timestamp* ts, char* string)
+int timestamp_to_string(Timestamp* ts, char* string)
 {
   static char str_month[13];
   static char str_day[13];
@@ -71,12 +71,13 @@ void timestamp_to_string(Timestamp* ts, char* string)
     sprintf(str_hour, "%d", ts->hour);
   
   if (ts->minute < 10)
-    sprintf(str_minute, "0%d", ts->hour);
+    sprintf(str_minute, "0%d", ts->minute);
   else
-    sprintf(str_minute, "%d", ts->hour);
+    sprintf(str_minute, "%d", ts->minute);
   
   sprintf(string, "%d-%s-%sT%s:%sZ", ts->year, str_month, str_day, str_hour, str_minute);
-  LOG_INFO("Created Timestamp: %s\n", string);
+  strcat(string, "\0");
+  return strlen(string);
 }
 
 void string_to_timestamp(char* string, Timestamp* ts)

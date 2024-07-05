@@ -145,6 +145,7 @@ static void manage_hvac()
             }         
             break;
         default:
+            LOG_ERR("[Climate-manager] Error in the manage_hvac function\n");
             break;
         }
         
@@ -175,6 +176,7 @@ static void manage_hvac()
             }         
             break;
         default:
+            LOG_ERR("[Climate-manager] Error in the manage_hvac function\n");
             break;
         }
     }
@@ -189,7 +191,7 @@ void res_get_handler(coap_message_t *request, coap_message_t *response,
     MeasurementData data[2];
     json_senml js_senml;
     char names[2][MAX_STR_LEN] = {"temperature", "HVAC"};
-    char timestamp_str[2][TIMESTAMP_STRING_LEN];
+    char timestamp_str[2][TIMESTAMP_STRING_LEN] = {"", ""};
     char base_name[BASE_NAME_LEN];
     int payload_len = 0;
     
@@ -209,7 +211,7 @@ void res_get_handler(coap_message_t *request, coap_message_t *response,
     data[1].name = names[1];
     data[1].unit = "None";
     data[1].time = timestamp_str[1];
-    data[1].v.v = active_hvac;
+    data[1].v.vd = active_hvac;
     data[1].type = V_INT;
 
     // Creo il JSON SenML
@@ -245,10 +247,13 @@ void res_get_handler(coap_message_t *request, coap_message_t *response,
 }
 
 static void res_event_handler(void) {
+    char timestamp_str[TIMESTAMP_STRING_LEN];
+    timestamp_to_string(&timestamp, timestamp_str);
     // Sample the temperature
     old_temperature = temperature;
     temperature = fake_temp_sensing(temperature);
     LOG_INFO("[Climate-manager]------------------------NEW-EVENT------------------ \n");
+    LOG_INFO("[Climate-Manager] New sample at time %s\n", timestamp_str);
     LOG_INFO("[Climate-manager] Sampled Temperature: %f\n", temperature);
     // Making Decision
     manage_hvac();
