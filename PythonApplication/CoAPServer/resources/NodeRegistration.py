@@ -7,7 +7,7 @@ from configparser import ConfigParser
 from CoAPServer.CoAPObserver import CoAPObserver
 from coapthon.messages.response import Response
 from Utility.Log import Log
-from datetime import datetime
+
 log_istance = Log(__name__, "Unknow")
 log = log_istance.get_logger()
 

@@ -41,23 +41,16 @@ function compile_all_nodes(){
 }
 
 function run_cooja(){
-    cd 
-    cd contiki-ng/tools/cooja
-    gnome-terminal -- ./gradlew run --info --debug
-    cd $BASE_PATH
+    #./gradlew run --info --debug
+    gnome-terminal -- bash -c 'cd; cd contiki-ng/tools/cooja; ./gradlew run; exec bash'
 }
 
 function run_rpl_border_router(){
-    cd ..
-    cd rpl-border-router
-    gnome-terminal -- make TARGET=cooja connect-router-cooja
-    cd $BASE_PATH
+    gnome-terminal -- bash -c ' cd ..;cd rpl-border-router;make TARGET=cooja connect-router-cooja;'
 }
 
 function run_CoAP_server(){
-    cd ./PythonApplication
-    gnome-terminal -- python3 ./main.py
-    cd $BASE_PATH
+    gnome-terminal -- bash -c 'cd ./PythonApplication; python3 ./main.py; exec bash'
 }
 
 function mysql_cmd() {

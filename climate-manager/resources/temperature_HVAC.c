@@ -1,11 +1,13 @@
 #include "contiki.h"
 #include "coap-engine.h"
 #include "sys/log.h"
+#include "os/dev/leds.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "../Utility/RandomNumberGenerator/RandomNumberGenerator.h"
 #include "../Utility/JSONSenML/JSONSenML.h"
 #include "../Utility/Timestamp/Timestamp.h"
+#include "../Utility/Leds/Leds.h"
 //----------------------------------PARAMETERS----------------------------------//
 //[+] LOG CONFIGURATION
 #define LOG_MODULE "App"
@@ -179,6 +181,23 @@ static void manage_hvac()
             LOG_ERR("[Climate-manager] Error in the manage_hvac function\n");
             break;
         }
+    }
+
+    // Control the leds
+    switch (active_hvac)
+    {
+    case OFF:
+        ctrl_leds(LEDS_RED);
+        break;
+    case HVAC1:
+        ctrl_leds(LEDS_YELLOW);
+        break;
+    case HVAC2:
+        ctrl_leds(LEDS_GREEN);
+        break;
+    default:
+        LOG_ERR("[Climate-manager] Error in the manage_hvac function in leds control\n");
+        break;
     }
     
 

@@ -3,16 +3,16 @@
 #include "contiki.h"
 #include "sys/log.h"
 #include "etimer.h"
+#include "os/dev/leds.h"
 
 #include "coap-engine.h"
 #include "coap-blocking-api.h"
 #include "coap-observe-client.h"
 
-//#include "../Utility/Timestamp/Timestamp.h"
 #include "../Utility/RandomNumberGenerator/RandomNumberGenerator.h"
 #include "../Utility/JSONSenML/JSONSenML.h"
 #include "../Utility/Timestamp/Timestamp.h"
-
+#include "../Utility/Leds/Leds.h"
 //----------------------------------PARAMETERS----------------------------------//
 //[+] LOG CONFIGURATION
 #define LOG_MODULE "App"
@@ -32,6 +32,10 @@ static const char *service_registration_url = "/registration"; // URL di registr
 #define MAX_DISCOVERY_ATTEMPTS 3
 static char ip_energy_manager[40];
 static const char *service_discovery_url = "/discovery";
+//[+] CLOCK PARAMETERS
+#define MAX_CLOCK_REQ_ATTEMPTS 3
+static const char *service_clock_url = "/clock";
+bool clock_sync = false;
 
 //[+] OBSERVING PARAMETERS
 static coap_endpoint_t energy_manager_ep;
@@ -39,7 +43,7 @@ static coap_observee_t* solar_energy_res;
 //[+] TIME PARAMETERS
 #define SAMPLING_PERIOD 1 // in hours
 int h_sampling_period = SAMPLING_PERIOD;
-int sampling_period = 10; //3600 * h_sampling_period; in seconds
+int sampling_period = 30 * SAMPLING_PERIOD; //3600 * SAMPLING_PERIOD; in seconds
 
 Timestamp timestamp = {
   .year = 2024,
@@ -106,6 +110,32 @@ void discovery_chunk_handler(coap_message_t *response)
     }
 }
 
+void clock_chunk_handler(coap_message_t *response)
+{
+    if(response == NULL) {
+        LOG_ERR("Request timed out\n");
+    }  else if (response->code !=69)
+    {
+        LOG_ERR("[Climate-manager] Error in registration: %d\n",response->code);
+    }else{
+        LOG_INFO("[Climate-manager] Received clock from server: %s\n", response->payload);
+        // Extract the timestamp from the response
+        char str_timestamp[TIMESTAMP_STRING_LEN];
+        strncpy(str_timestamp, (char*)response->payload, response->payload_len);
+        string_to_timestamp(str_timestamp, &timestamp);
+        
+        max_attempts = 0; // Stop the registration attempts
+        return;
+    }
+
+    // retry registration
+    max_attempts--;
+    // if max attempts are reached, signal to wait
+    if(max_attempts == 0) {
+        max_attempts = -1;
+    }
+}
+
 static void solar_energy_callback(coap_observee_t *obs, void *notification, coap_notification_flag_t flag)
 {
     LOG_INFO("[Climate-manager] Notification received:");
@@ -147,8 +177,21 @@ static void solar_energy_callback(coap_observee_t *obs, void *notification, coap
         predicted_energy = payload.measurement_data[0].v.v;
         // Update the sampled energy
         sampled_energy = payload.measurement_data[1].v.v;
-        LOG_INFO("[Climate-manager] Sampled energy recived: %.2f\n", sampled_energy);
-
+        LOG_INFO("[Climate-manager][%s]Sampled energy received: %.2f\n", payload.measurement_data[1].time, sampled_energy);
+        if (clock_sync == false) {
+            
+            Timestamp ts ={
+                .year = -1,
+                .month = -1,
+                .day = -1,
+                .hour = -1,
+                .minute = -1
+            };
+            string_to_timestamp(payload.measurement_data[1].time, &ts);
+            copy_timestamp(&ts, &timestamp);
+            clock_sync = true;
+            LOG_INFO("[Climate-manager]Clock syncronized\n");
+            }
         break;
     case OBSERVE_OK:
         LOG_INFO("[Climate-manager] Observe OK\n");
@@ -175,6 +218,8 @@ PROCESS_THREAD(climate_manager_process, ev, data)
 {
   
   PROCESS_BEGIN();
+  // Activate the yellow LED to signal the start of the process
+    leds_single_on(LEDS_YELLOW);
   // Activate the temperature resource
   coap_activate_resource(&res_temperature_HVAC,"temperature_HVAC");
   //------------------[1]-CoAP-Server-Registration-------------------------------//
@@ -199,7 +244,27 @@ PROCESS_THREAD(climate_manager_process, ev, data)
         }
       
     }
-  //------------------------[2]-Discovery-Solar-Node---------------------------------//
+  //------------------------[2]-Clock-Request----------------------------------//
+    LOG_INFO("[Climate-manager] Time request process started\n");
+    max_attempts = MAX_CLOCK_REQ_ATTEMPTS;
+    while (max_attempts != 0) {
+        // Populate the coap endpoint structure
+        coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
+        // Prepare the request
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_set_header_uri_path(request, service_clock_url);
+        // Set the payload
+        coap_set_payload(request, (uint8_t *)"", strlen(""));
+        // Send the request and wait for the response
+        COAP_BLOCKING_REQUEST(&server_ep, request, clock_chunk_handler);
+        // Something goes wrong with the registration, the node sleeps and tries again
+        if (max_attempts == -1) {
+            etimer_set(&sleep_timer, CLOCK_SECOND * SLEEP_INTERVAL);
+            PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
+            max_attempts = MAX_CLOCK_REQ_ATTEMPTS;
+        }
+    }
+  //------------------------[3]-Discovery-Solar-Node---------------------------------//
     LOG_INFO("[Climate-manager] Discovery process started\n");
     max_attempts = MAX_DISCOVERY_ATTEMPTS;
     while (max_attempts != 0) {
@@ -229,7 +294,8 @@ PROCESS_THREAD(climate_manager_process, ev, data)
 
   //------------------------[3]-Climate-Management----------------------------------//
   LOG_INFO("[Climate-manager] Climate manager started\n");
-  
+  leds_single_off(LEDS_YELLOW);
+  ctrl_leds(LEDS_RED);
   etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
   do
   {
@@ -243,7 +309,7 @@ PROCESS_THREAD(climate_manager_process, ev, data)
       advance_time(&timestamp, h_sampling_period);
       // Wait for the next sensing interval
       etimer_reset(&sleep_timer);
-    }   
+    } 
   } while (1);
 
   PROCESS_END();
