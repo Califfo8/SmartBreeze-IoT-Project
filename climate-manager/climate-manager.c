@@ -43,7 +43,7 @@ static coap_endpoint_t energy_manager_ep;
 static coap_observee_t* solar_energy_res;
 //[+] TIME PARAMETERS
 #define SAMPLING_PERIOD 1 // in hours
-int h_sampling_period = SAMPLING_PERIOD;
+int m_sampling_period = 60 * SAMPLING_PERIOD;
 int sampling_period = 3600 * SAMPLING_PERIOD;
 
 Timestamp timestamp = {
@@ -304,7 +304,7 @@ PROCESS_THREAD(climate_manager_process, ev, data)
     if(etimer_expired(&sleep_timer))
     {
       // Update the timestamp
-      advance_time(&timestamp, h_sampling_period);
+      advance_time(&timestamp, m_sampling_period);
       // Sense the temperature and manage the HVAC
       res_temperature_HVAC.trigger();
       // Wait for the next sensing interval
@@ -324,7 +324,7 @@ PROCESS_THREAD(climate_manager_process, ev, data)
             .hour = timestamp.hour,
             .minute = timestamp.minute
         };
-        advance_time_m(&timestamp, minutes_passed);
+        advance_time(&timestamp, minutes_passed);
         res_temperature_HVAC.trigger();
         LOG_INFO("[Climate-manager] Minutes passed: %d minutes\n", minutes_passed);
         //restore the timestamp for the correct advance at the next sensing interval

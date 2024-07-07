@@ -1,8 +1,13 @@
 #include "Timestamp.h"
 
-//Advance the time by a certain number of hours
-void advance_time(Timestamp* ts, int hours)
+//Advance the time by a certain number of minutes
+void advance_time(Timestamp* ts, int minutes)
 {
+  int hours = 0;
+  ts->minute += minutes;
+  hours = ts->minute / 60;
+  ts->minute = ts->minute % 60;
+
   ts->hour = ts->hour + hours;
   if (ts->hour == 24)
   {
@@ -30,15 +35,6 @@ void advance_time(Timestamp* ts, int hours)
       }
     }
   }
-}
-
-void advance_time_m(Timestamp* ts, int minutes)
-{
-  int hours = 0;
-  ts->minute += minutes;
-  hours = ts->minute / 60;
-  ts->minute = ts->minute % 60;
-  advance_time(ts, hours);
 }
 
 void convert_to_feature(Timestamp* ts, float* float_ts)

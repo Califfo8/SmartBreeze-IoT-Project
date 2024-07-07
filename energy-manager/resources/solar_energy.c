@@ -27,8 +27,8 @@
 //[+] PREDICTION PARAMETERS
 //Actual date and time in [Year,Month, Day, Hour] format
 extern Timestamp timestamp;
-//Prediction horizon in hours
-static int future_hours = 1;
+//Prediction horizon in minutes
+static int future_minutes = 60;
 //Correction factor for the prediction
 static float correction_factor = 0;
 //Scaler parameters for standardizing the input features
@@ -36,7 +36,7 @@ static const float SCALER_MEAN[] = {6.51393662, 16.15158457, 13.93967163};
 static const float SCALER_SCALE[] = {2.65563593, 8.99027562, 3.8395894};
 
 //----------------------------------RESOURCES----------------------------------//
-// Energy produced by the solar panel in [future_hours] in the future
+// Energy produced by the solar panel in [future_minutes] in the future
 static float predicted_energy = -1;
 // Energy produced by the solar panel in the last sampling period
 static float sampled_energy = -1;
@@ -118,7 +118,7 @@ static float predict_solar_energy()
     // Calibrate the correction factor;
     correction_factor = (sampled_energy - prediction)*0.12 + correction_factor*0.88;
     // Compute the prediction of the future solar energy
-    advance_time(&ts_copy, future_hours);
+    advance_time(&ts_copy, future_minutes);
     convert_to_feature(&ts_copy, features);
     prediction = predict(features);
     // Apply the correction factor
@@ -154,7 +154,7 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
     int payload_len = 0;
         
     //Timestamp for the future prediction
-    advance_time(&future_ts, future_hours);
+    advance_time(&future_ts, future_minutes);
     timestamp_to_string(&future_ts, timestamp_str[0]);
     //Timestamp for the current sample
     timestamp_to_string(&timestamp, timestamp_str[1]);
