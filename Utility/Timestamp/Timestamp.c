@@ -1,7 +1,6 @@
 #include "Timestamp.h"
 
 //Advance the time by a certain number of hours
-//the application do not consider the minutes so it will be always the same
 void advance_time(Timestamp* ts, int hours)
 {
   ts->hour = ts->hour + hours;
@@ -33,6 +32,15 @@ void advance_time(Timestamp* ts, int hours)
   }
 }
 
+void advance_time_m(Timestamp* ts, int minutes)
+{
+  int hours = 0;
+  ts->minute += minutes;
+  hours = ts->minute / 60;
+  ts->minute = ts->minute % 60;
+  advance_time(ts, hours);
+}
+
 void convert_to_feature(Timestamp* ts, float* float_ts)
 {
   float_ts[0] = ts->month;
@@ -40,13 +48,13 @@ void convert_to_feature(Timestamp* ts, float* float_ts)
   float_ts[1] = ts->hour;
 }
 
-void copy_timestamp(Timestamp* ts, Timestamp* new_ts)
+void copy_timestamp(Timestamp* dest_ts, Timestamp* src_ts)
 {
-  ts->year = new_ts->year;
-  ts->month = new_ts->month;
-  ts->day = new_ts->day;
-  ts->hour = new_ts->hour;
-  ts->minute = new_ts->minute;
+  dest_ts->year = src_ts->year;
+  dest_ts->month = src_ts->month;
+  dest_ts->day = src_ts->day;
+  dest_ts->hour = src_ts->hour;
+  dest_ts->minute = src_ts->minute;
 }
 
 int timestamp_to_string(Timestamp* ts, char* string)

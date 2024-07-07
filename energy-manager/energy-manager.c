@@ -27,7 +27,7 @@ static const char *service_clock_url = "/clock";
 //[+] TIME PARAMETERS
 #define SAMPLING_PERIOD 1 // in hours
 int h_sampling_period = SAMPLING_PERIOD; // in hours
-int sampling_period = 30 * SAMPLING_PERIOD; //3600 * h_sampling_period; in seconds
+int sampling_period = 3600 * SAMPLING_PERIOD; //3600 * h_sampling_period; in seconds
 
 Timestamp timestamp = {
   .year = 2024,
@@ -162,10 +162,10 @@ PROCESS_THREAD(energy_manager_process, ev, data)
     if(etimer_expired(&sleep_timer))
     {
       ctrl_leds(LEDS_GREEN);
-      // Sense the solar energy
-      res_solar_energy.trigger();
       // Update the timestamp
       advance_time(&timestamp, h_sampling_period);
+      // Sense the solar energy
+      res_solar_energy.trigger();
       // Wait for the next sensing interval
       ctrl_leds(LEDS_RED);
       etimer_reset(&sleep_timer);

@@ -4,6 +4,7 @@
 #include "sys/log.h"
 #include "etimer.h"
 #include "os/dev/leds.h"
+#include "os/dev/button-hal.h"
 
 #include "coap-engine.h"
 #include "coap-blocking-api.h"
@@ -43,7 +44,7 @@ static coap_observee_t* solar_energy_res;
 //[+] TIME PARAMETERS
 #define SAMPLING_PERIOD 1 // in hours
 int h_sampling_period = SAMPLING_PERIOD;
-int sampling_period = 30 * SAMPLING_PERIOD; //3600 * SAMPLING_PERIOD; in seconds
+int sampling_period = 3600 * SAMPLING_PERIOD;
 
 Timestamp timestamp = {
   .year = 2024,
@@ -60,8 +61,11 @@ float predicted_energy = -1;
 #define SLEEP_INTERVAL 30 // in seconds
 static struct etimer sleep_timer;
 
+//[+] BUTTON PARAMETERS
+bool button_pressed = false;
 //----------------------------------RESOURCES----------------------------------//
-extern coap_resource_t res_temperature_HVAC;
+extern coap_resource_t res_temperature_HVAC; 
+// require sampled_energy, predicted_energy, timestamp and button_pressed definitions
 
 //----------------------------FUNCTIONS----------------------------------------//
 
@@ -216,7 +220,7 @@ AUTOSTART_PROCESSES(&climate_manager_process);
 //--------------------------------------------------------------------------------//
 PROCESS_THREAD(climate_manager_process, ev, data)
 {
-  
+
   PROCESS_BEGIN();
   // Activate the yellow LED to signal the start of the process
     leds_single_on(LEDS_YELLOW);
@@ -226,9 +230,9 @@ PROCESS_THREAD(climate_manager_process, ev, data)
     static coap_endpoint_t server_ep;
     static coap_message_t request[1]; // This way the packet can be treated as pointer as usual
 
+    // Populate the coap endpoint structure
+    coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
     while (max_attempts != 0) {
-        // Populate the coap endpoint structure
-        coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
         // Prepare the request
         coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0);
         coap_set_header_uri_path(request, service_registration_url);
@@ -248,8 +252,6 @@ PROCESS_THREAD(climate_manager_process, ev, data)
     LOG_INFO("[Climate-manager] Time request process started\n");
     max_attempts = MAX_CLOCK_REQ_ATTEMPTS;
     while (max_attempts != 0) {
-        // Populate the coap endpoint structure
-        coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
         // Prepare the request
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, service_clock_url);
@@ -268,8 +270,6 @@ PROCESS_THREAD(climate_manager_process, ev, data)
     LOG_INFO("[Climate-manager] Discovery process started\n");
     max_attempts = MAX_DISCOVERY_ATTEMPTS;
     while (max_attempts != 0) {
-        // Populate the coap endpoint structure
-        coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
         // Prepare the request
         coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
         coap_set_header_uri_path(request, service_discovery_url);
@@ -303,12 +303,33 @@ PROCESS_THREAD(climate_manager_process, ev, data)
     PROCESS_YIELD();
     if(etimer_expired(&sleep_timer))
     {
-      // Sense the temperature and manage the HVAC
-      res_temperature_HVAC.trigger();
       // Update the timestamp
       advance_time(&timestamp, h_sampling_period);
+      // Sense the temperature and manage the HVAC
+      res_temperature_HVAC.trigger();
       // Wait for the next sensing interval
       etimer_reset(&sleep_timer);
+    }else if(ev == button_hal_press_event)
+    {
+        button_pressed = true;
+        ctrl_leds(LEDS_BLUE);
+        // Update the timestamp
+        clock_time_t remaining_time = etimer_expiration_time(&sleep_timer) - clock_time();
+        int minutes_passed =  ( sampling_period - (remaining_time / CLOCK_SECOND)) / 60;
+        
+        Timestamp old_timestamp={
+            .year = timestamp.year,
+            .month = timestamp.month,
+            .day = timestamp.day,
+            .hour = timestamp.hour,
+            .minute = timestamp.minute
+        };
+        advance_time_m(&timestamp, minutes_passed);
+        res_temperature_HVAC.trigger();
+        LOG_INFO("[Climate-manager] Minutes passed: %d minutes\n", minutes_passed);
+        //restore the timestamp for the correct advance at the next sensing interval
+        copy_timestamp(&timestamp, &old_timestamp);
+        button_pressed = false;
     } 
   } while (1);
 

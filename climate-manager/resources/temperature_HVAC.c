@@ -43,7 +43,8 @@ float hvac2_power_cons = HVAC2_POWER_CONS;
 extern float sampled_energy;
 extern float predicted_energy;
 extern Timestamp timestamp;
-
+//[+] EXTERNAL PARAMETERS
+extern bool button_pressed;
 //[+] DECISION PARAMETERS
 static float old_temperature = 20.0;
 //----------------------------------RESOURCES----------------------------------//
@@ -97,6 +98,11 @@ static void manage_hvac()
     if(sampled_energy == -1 || predicted_energy == -1)
     {
         LOG_ERR("[Climate-manager] Energy parameters not arrived\n");
+        return;
+    }else if (button_pressed)
+    {
+        LOG_INFO("[Climate-manager] BUTTON PRESSED: FORCED HVAC2 OPERATION\n");
+        active_hvac = HVAC2;
         return;
     }
     // Compute the variation of the temperature
