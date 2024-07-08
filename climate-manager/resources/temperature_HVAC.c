@@ -29,15 +29,14 @@
 #define HVAC2_RATE 0.12
 
 // User parameters
-#define MAX_TEMP_USER 25
-#define MIN_TEMP_USER 10
 #define HVAC1_POWER_CONS 500
 #define HVAC2_POWER_CONS 2000
-float max_temp_user = MAX_TEMP_USER;
-float min_temp_user = MIN_TEMP_USER;
 float hvac1_power_cons = HVAC1_POWER_CONS;
 float hvac2_power_cons = HVAC2_POWER_CONS;
 
+//[+] USER PARAMETERS
+extern float max_temp_user;
+extern float min_temp_user;
 
 //[+] OBSERVED PARAMETERS
 extern float sampled_energy;

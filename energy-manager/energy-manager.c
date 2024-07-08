@@ -12,7 +12,7 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 //[+] REGISRATION PARAMETERS
-#define NODE_INFO_JSON "{\"node\":\"energy-manager\",\"resource\":\"solar_energy\"}"
+#define NODE_INFO_JSON "{\"node\":\"energy-manager\",\"resource\":\"solar_energy\",\"settings\":\"{\\\"Energy sampling period(h)\\\":1}\"}"
 #define MAX_REGISTER_ATTEMPTS 3
 #define SERVER_EP "coap://[fd00::1]:5683"
 #define CREATED_CODE 65
@@ -24,10 +24,9 @@ static const char *service_registration_url = "/registration"; // URL di registr
 #define MAX_CLOCK_REQ_ATTEMPTS 3
 static const char *service_clock_url = "/clock";
 
-//[+] TIME PARAMETERS
-#define SAMPLING_PERIOD 1 // in hours
-int m_sampling_period = 60 * SAMPLING_PERIOD;
-int sampling_period = 3600 * SAMPLING_PERIOD; //in seconds
+//[+] TIME USER PARAMETERS
+extern int m_sampling_period;
+extern int sampling_period; //in seconds
 
 Timestamp timestamp = {
   .year = 2024,
@@ -43,6 +42,7 @@ static struct etimer sleep_timer;
 
 //----------------------------------RESOURCES----------------------------------//
 extern coap_resource_t res_solar_energy;
+extern coap_resource_t res_settings;
 
 //----------------------------FUNCTIONS----------------------------------------//
 
@@ -149,8 +149,9 @@ PROCESS_THREAD(energy_manager_process, ev, data)
         }
     }
   //------------------------[3]-Energy-Sensing----------------------------------//
-
   LOG_INFO("[Energy-manager] Started\n");
+  // Activate the settings resource
+  coap_activate_resource(&res_settings, "settings");
   leds_single_off(LEDS_YELLOW);
   ctrl_leds(LEDS_RED);
   // Sensing interval
@@ -168,7 +169,7 @@ PROCESS_THREAD(energy_manager_process, ev, data)
       res_solar_energy.trigger();
       // Wait for the next sensing interval
       ctrl_leds(LEDS_RED);
-      etimer_reset(&sleep_timer);
+      etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
     }
     
   } while (1);

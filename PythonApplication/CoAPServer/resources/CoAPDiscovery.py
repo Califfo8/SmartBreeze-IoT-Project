@@ -43,7 +43,7 @@ class CoAPDiscovery(Resource):
         if database.connect() is None:
             return None
         
-        query = "SELECT COUNT(*) FROM nodes WHERE resource = %s AND status = 'ACTIVE'"
+        query = "SELECT COUNT(*) FROM nodes WHERE resource = %s"
         val = (request.payload,)
 
         node_ip = database.query(query, val, True)
@@ -55,7 +55,7 @@ class CoAPDiscovery(Resource):
             log.error("Resource not found:{}".format(node_ip[0][0]))
             return None
         # If the resource is found, return the ip address
-        query = "SELECT ip FROM nodes WHERE resource = %s AND status = 'ACTIVE'"
+        query = "SELECT ip FROM nodes WHERE resource = %s"
         node_ip = database.query(query, val, True)
         if node_ip is None:
             database.close()

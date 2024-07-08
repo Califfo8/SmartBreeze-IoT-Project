@@ -16,10 +16,10 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 //[+] ENERGY PARAMETERS
-#define MAX_ENERGY 7500
-#define MIN_ENERGY 0
 #define UNIT "W"
 // Simulation parameters
+#define MAX_ENERGY 7500
+#define MIN_ENERGY 0
 #define MAX_NIGHT_ENERGY 200
 #define DAY_STEP 0.2 // Energy increase simulation step during the day
 #define NIGHT_STEP 0.1
@@ -27,16 +27,15 @@
 //[+] PREDICTION PARAMETERS
 //Actual date and time in [Year,Month, Day, Hour] format
 extern Timestamp timestamp;
-//Prediction horizon in minutes
-static int future_minutes = 60;
 //Correction factor for the prediction
 static float correction_factor = 0;
 //Scaler parameters for standardizing the input features
 static const float SCALER_MEAN[] = {6.51393662, 16.15158457, 13.93967163}; 
 static const float SCALER_SCALE[] = {2.65563593, 8.99027562, 3.8395894};
-
+// Prediction horizon in minutes
+extern int m_sampling_period;
 //----------------------------------RESOURCES----------------------------------//
-// Energy produced by the solar panel in [future_minutes] in the future
+// Energy produced by the solar panel in [m_sampling_period] in the future
 static float predicted_energy = -1;
 // Energy produced by the solar panel in the last sampling period
 static float sampled_energy = -1;
@@ -118,7 +117,7 @@ static float predict_solar_energy()
     // Calibrate the correction factor;
     correction_factor = (sampled_energy - prediction)*0.12 + correction_factor*0.88;
     // Compute the prediction of the future solar energy
-    advance_time(&ts_copy, future_minutes);
+    advance_time(&ts_copy, m_sampling_period);
     convert_to_feature(&ts_copy, features);
     prediction = predict(features);
     // Apply the correction factor
@@ -154,7 +153,7 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
     int payload_len = 0;
         
     //Timestamp for the future prediction
-    advance_time(&future_ts, future_minutes);
+    advance_time(&future_ts, m_sampling_period);
     timestamp_to_string(&future_ts, timestamp_str[0]);
     //Timestamp for the current sample
     timestamp_to_string(&timestamp, timestamp_str[1]);

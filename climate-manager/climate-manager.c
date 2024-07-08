@@ -21,7 +21,7 @@
 
 
 //[+] REGISRATION PARAMETERS
-#define NODE_INFO_JSON "{\"node\":\"climate-manager\",\"resource\":\"temperature_HVAC\"}"
+#define NODE_INFO_JSON "{\"node\":\"climate-manager\",\"resource\":\"temperature_HVAC\",\"settings\":\"{\\\"Temp sampling period(h)\\\":1,\\\"Max T\\\":25,\\\"Min T\\\":10}\"}"
 #define MAX_REGISTER_ATTEMPTS 3
 #define SERVER_EP "coap://[fd00::1]:5683"
 #define CREATED_CODE 65
@@ -41,10 +41,9 @@ bool clock_sync = false;
 //[+] OBSERVING PARAMETERS
 static coap_endpoint_t energy_manager_ep;
 static coap_observee_t* solar_energy_res;
-//[+] TIME PARAMETERS
-#define SAMPLING_PERIOD 1 // in hours
-int m_sampling_period = 60 * SAMPLING_PERIOD;
-int sampling_period = 3600 * SAMPLING_PERIOD;
+//[+] TIME USER PARAMETERS
+extern int m_sampling_period;
+extern int sampling_period;
 
 Timestamp timestamp = {
   .year = 2024,
@@ -64,7 +63,8 @@ static struct etimer sleep_timer;
 //[+] BUTTON PARAMETERS
 bool button_pressed = false;
 //----------------------------------RESOURCES----------------------------------//
-extern coap_resource_t res_temperature_HVAC; 
+extern coap_resource_t res_temperature_HVAC;
+extern coap_resource_t res_settings;
 // require sampled_energy, predicted_energy, timestamp and button_pressed definitions
 
 //----------------------------FUNCTIONS----------------------------------------//
@@ -294,6 +294,7 @@ PROCESS_THREAD(climate_manager_process, ev, data)
 
   //------------------------[3]-Climate-Management----------------------------------//
   LOG_INFO("[Climate-manager] Climate manager started\n");
+  coap_activate_resource(&res_settings, "settings");
   leds_single_off(LEDS_YELLOW);
   ctrl_leds(LEDS_RED);
   etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
@@ -308,7 +309,7 @@ PROCESS_THREAD(climate_manager_process, ev, data)
       // Sense the temperature and manage the HVAC
       res_temperature_HVAC.trigger();
       // Wait for the next sensing interval
-      etimer_reset(&sleep_timer);
+      etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
     }else if(ev == button_hal_press_event)
     {
         button_pressed = true;

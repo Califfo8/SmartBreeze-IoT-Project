@@ -85,7 +85,7 @@ class CoAPObserver:
             val = (db_timestamp, data[1]["v"], data[2]["v"])
             ret = database.query(self.query, val, False)
             if ret is None:
-                log.error("Failed to insert temperature information into the database")
+                log.error("Failed to insert temperature information into the database: {}".format(val))
                 return None
             log.info("Updated temperature")
         

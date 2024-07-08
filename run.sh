@@ -50,7 +50,11 @@ function run_rpl_border_router(){
 }
 
 function run_CoAP_server(){
-    gnome-terminal -- bash -c 'cd ./PythonApplication; python3 ./main.py; exec bash'
+    gnome-terminal -- bash -c 'cd ./PythonApplication; python3 ./server.py; exec bash'
+}
+
+function run_user_app(){
+    gnome-terminal -- bash -c 'cd ./PythonApplication; python3 ./userapp.py; exec bash'
 }
 
 function mysql_cmd() {
@@ -67,7 +71,7 @@ function create_db(){
     (ip VARCHAR(50) NOT NULL,
     name VARCHAR(255) NOT NULL, 
     resource VARCHAR(255) NOT NULL,
-    status VARCHAR(255) NOT NULL,
+    settings VARCHAR(255) NOT NULL,
     PRIMARY KEY (ip));"
 
     mysql_cmd "CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.solar_production 
@@ -127,6 +131,9 @@ case $1 in
         ;;
     sql)
         query_db "$2"
+        ;;
+    user)
+        run_user_app
         ;;
     *)
         echo "Usage: $0 {create-db|compile_all|cooja|border-router|coap-server|sim|relsim}"

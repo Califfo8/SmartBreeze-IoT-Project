@@ -120,9 +120,10 @@
       <skin>org.contikios.cooja.plugins.skins.GridVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.TrafficVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.UDGMVisualizerSkin</skin>
+      <skin>org.contikios.cooja.plugins.skins.LEDVisualizerSkin</skin>
       <viewport>7.80285986829131 0.0 0.0 7.80285986829131 -140.36285005294752 -295.75285047892334</viewport>
     </plugin_config>
-    <bounds x="1" y="1" height="400" width="400" z="2" />
+    <bounds x="1" y="1" height="400" width="400" z="1" />
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.LogListener
@@ -131,7 +132,7 @@
       <formatted_time />
       <coloring />
     </plugin_config>
-    <bounds x="400" y="160" height="446" width="2090" z="3" />
+    <bounds x="400" y="160" height="446" width="2090" />
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.TimeLine
@@ -152,7 +153,7 @@
       <notes>Enter notes here</notes>
       <decorations>true</decorations>
     </plugin_config>
-    <bounds x="400" y="0" height="160" width="2090" z="1" />
+    <bounds x="400" y="0" height="160" width="2090" z="3" />
   </plugin>
   <plugin>
     org.contikios.cooja.serialsocket.SerialSocketServer
@@ -161,6 +162,6 @@
       <port>60001</port>
       <bound>true</bound>
     </plugin_config>
-    <bounds x="20" y="422" height="116" width="362" />
+    <bounds x="20" y="422" height="116" width="362" z="2" />
   </plugin>
 </simconf>

@@ -21,7 +21,8 @@ class NodeRegistration(Resource):
         res = NodeRegistration()
         json_register_schema = {
                     "node" : {"type" : "string"},
-                    "resource" : {"type" : "string"}
+                    "resource" : {"type" : "string"},
+                    "settings" : {"type" : "string"}
                     }   
 
         res.location_query = request.uri_query
@@ -44,8 +45,8 @@ class NodeRegistration(Resource):
         log_istance.set_resource(node_info["node"])
         log.info("Node Registration POST source recognized")
         # Insert the node information into the database
-        query = "REPLACE INTO nodes (ip, name ,resource, status) VALUES (%s, %s, %s, %s)"
-        val = (request.source[0], node_info["node"], str(node_info["resource"]), 'ACTIVE')
+        query = "REPLACE INTO nodes (ip, name ,resource, settings) VALUES (%s, %s, %s, %s)"
+        val = (request.source[0], node_info["node"], str(node_info["resource"]), str(node_info["settings"]))
         
         configur = ConfigParser()
         configur.read('./CoAPServer/config.ini')
