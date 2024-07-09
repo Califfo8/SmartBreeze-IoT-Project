@@ -17,14 +17,18 @@ class CoAPObserver:
         self.last_response = None
 
     def check_and_update(self, type, data, db):
-        search_query = "SELECT COUNT(*) FROM solar_production WHERE YEAR(timestamp) = %s AND MONTH(timestamp) = %s AND DAY(timestamp) = %s AND HOUR(timestamp) = %s AND {} IS NULL".format(type)
+        search_query = "SELECT COUNT(*) FROM solar_production WHERE YEAR(timestamp) = %s AND MONTH(timestamp) = %s AND DAY(timestamp) = %s AND HOUR(timestamp) = %s"
         insert_query = "INSERT INTO solar_production (timestamp,{}) VALUES (%s,%s)".format(type)
         update_query = "UPDATE solar_production SET {} = %s WHERE YEAR(timestamp) = %s AND MONTH(timestamp) = %s AND DAY(timestamp) = %s AND HOUR(timestamp) = %s".format(type)
         index = 2
         if type == "predicted":
             index = 1    
         #Check if the sampled data is already present
-        time = datetime.strptime(data[index]["t"], self.date_format)
+        try:
+            time = datetime.strptime(data[index]["t"], self.date_format)
+        except ValueError as e:
+            log.info("Timestamp pre syncronization, skipping...: {}".format(e))
+            return None
         db_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
         val = (time.year, time.month, time.day, time.hour)
         result = db.query(search_query, val, True)
@@ -74,20 +78,28 @@ class CoAPObserver:
 
         if self.resource == 'solar_energy':
             
-            self.check_and_update("sampled", data, database)
+            check = self.check_and_update("sampled", data, database)
+            if check is None:
+                database.close()
+                return None
             self.check_and_update("predicted", data, database)
             log.info("Updated solar energy production")
 
         elif self.resource == 'temperature_HVAC':
             self.query = "INSERT INTO temperature (timestamp, temperature, active_HVAC) VALUES (%s,%s, %s)"
-            time = datetime.strptime(data[1]["t"], self.date_format)
+            try:
+                time = datetime.strptime(data[1]["t"], self.date_format)
+            except ValueError as e:
+                log.info("Timestamp pre syncronization, skipping...: {}".format(e))
+                return None
             db_timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             val = (db_timestamp, data[1]["v"], data[2]["v"])
             ret = database.query(self.query, val, False)
             if ret is None:
                 log.error("Failed to insert temperature information into the database: {}".format(val))
                 return None
-            log.info("Updated temperature")
+            else:
+                log.info("Updated temperature")
         
         self.last_response = response
 

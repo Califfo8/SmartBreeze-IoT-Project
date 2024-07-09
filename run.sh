@@ -6,12 +6,12 @@ NODE_LIST="energy-manager climate-manager"
 # MySQL Credentials for creating the database
 MYSQL_USER="root"
 MYSQL_PASSWORD="PASSWORD"
-DATABASE_NAME="SmartBreezeDB" 
+
 #---------------------------------------------
 
 #Utility variables
 SHELL_HYSTORY=""
-BASE_PATH=$(pwd)
+DATABASE_NAME="SmartBreezeDB" 
 
 function compile_node(){
     cd ./$1
@@ -110,6 +110,7 @@ case $1 in
         run_CoAP_server
         ;;
     sim)
+        create_db
         compile_all_nodes
         shell_echo "Starting Cooja..."
         run_cooja
@@ -121,6 +122,7 @@ case $1 in
         run_CoAP_server
         ;;
     relsim)
+        create_db
         run_rpl_border_router
         echo "Press any key to start the CoAP server..."
         read -n 1 -s
