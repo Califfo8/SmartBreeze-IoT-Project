@@ -93,10 +93,11 @@ static void res_post_handler(coap_message_t *request, coap_message_t *response,
     }   
     LOG_INFO("[Climate-manager] New settings: %s\n", payload);
     sscanf((char*)payload, "{\"Temp sampling period(h)\":%f,\"Max T\":%f,\"Min T\":%f}", &h_sampling_period, &max_temp_user, &min_temp_user);
+    LOG_INFO("[Climate-manager] Post sscanf\n");
     // Update the sampling period
     sampling_period = 3600 * h_sampling_period;
     m_sampling_period = 60 * h_sampling_period;
-    LOG_INFO("[Climate-manager] New settings: Temp sampling period(h):%f | Max T:%f | Min T:%f", h_sampling_period, max_temp_user, min_temp_user);
+    LOG_INFO("[Climate-manager] New settings: Temp sampling period(h):%f | Max T:%f | Min T:%f\n", h_sampling_period, max_temp_user, min_temp_user);
     coap_set_status_code(response, CHANGED_2_04);
     coap_set_payload(response, buffer, 0);
     

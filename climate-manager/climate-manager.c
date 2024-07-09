@@ -46,16 +46,23 @@ extern int m_sampling_period;
 extern int sampling_period;
 
 Timestamp timestamp = {
-  .year = 2024,
-  .month = 7,
-  .day = 15,
-  .hour = 5,
-  .minute = 0
-};// DOPO DEVE ESSERE RICHIESTO ALL'APPLICAZIONE CLOUD
+  .year = -1,
+  .month = -1,
+  .day = -1,
+  .hour = -1,
+  .minute = -1
+};
 
 //[+] OBSERVED RESOURCE
 float sampled_energy = -1;
 float predicted_energy = -1;
+Timestamp timestamp_energy = {
+  .year = -1,
+  .month = -1,
+  .day = -1,
+  .hour = -1,
+  .minute = -1
+};
 //[+] TIMERS
 #define SLEEP_INTERVAL 30 // in seconds
 static struct etimer sleep_timer;
@@ -142,7 +149,7 @@ void clock_chunk_handler(coap_message_t *response)
 
 static void solar_energy_callback(coap_observee_t *obs, void *notification, coap_notification_flag_t flag)
 {
-    LOG_INFO("[Climate-manager] Notification received:");
+    LOG_INFO("[Climate-manager] Notification received:\n");
     
     json_senml payload;
 
@@ -182,6 +189,8 @@ static void solar_energy_callback(coap_observee_t *obs, void *notification, coap
         // Update the sampled energy
         sampled_energy = payload.measurement_data[1].v.v;
         LOG_INFO("[Climate-manager][%s]Sampled energy received: %.2f\n", payload.measurement_data[1].time, sampled_energy);
+        // Update the timestamp of the prediction
+        string_to_timestamp(payload.measurement_data[0].time, &timestamp_energy);
         if (clock_sync == false) {
             
             Timestamp ts ={
@@ -195,7 +204,9 @@ static void solar_energy_callback(coap_observee_t *obs, void *notification, coap
             copy_timestamp(&ts, &timestamp);
             clock_sync = true;
             LOG_INFO("[Climate-manager]Clock syncronized\n");
-            }
+        }
+        
+        res_temperature_HVAC.trigger();
         break;
     case OBSERVE_OK:
         LOG_INFO("[Climate-manager] Observe OK\n");
@@ -297,11 +308,11 @@ PROCESS_THREAD(climate_manager_process, ev, data)
   coap_activate_resource(&res_settings, "settings");
   leds_single_off(LEDS_YELLOW);
   ctrl_leds(LEDS_RED);
-  etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
+  //etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
   do
   {
     //Process going to sleep
-    PROCESS_YIELD();
+    PROCESS_YIELD();/*
     if(etimer_expired(&sleep_timer))
     {
       // Update the timestamp
@@ -310,7 +321,7 @@ PROCESS_THREAD(climate_manager_process, ev, data)
       res_temperature_HVAC.trigger();
       // Wait for the next sensing interval
       etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
-    }else if(ev == button_hal_press_event)
+    }else*/ if(ev == button_hal_press_event)
     {
         button_pressed = true;
         ctrl_leds(LEDS_BLUE);

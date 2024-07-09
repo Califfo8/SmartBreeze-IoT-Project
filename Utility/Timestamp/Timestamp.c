@@ -88,3 +88,13 @@ void string_to_timestamp(char* string, Timestamp* ts)
 {
   sscanf(string, "%d-%d-%dT%d:%dZ", &ts->year, &ts->month, &ts->day, &ts->hour, &ts->minute);
 }
+
+int cmp_timestamp(Timestamp* ts1, Timestamp* ts2)
+{
+  if (ts1->year == ts2->year && ts1->month == ts2->month && ts1->day == ts2->day && ts1->hour == ts2->hour && ts1->minute == ts2->minute)
+    return 0;
+  else if (ts1->year > ts2->year || (ts1->year == ts2->year && ts1->month > ts2->month) || (ts1->year == ts2->year && ts1->month == ts2->month && ts1->day > ts2->day) || (ts1->year == ts2->year && ts1->month == ts2->month && ts1->day == ts2->day && ts1->hour > ts2->hour) || (ts1->year == ts2->year && ts1->month == ts2->month && ts1->day == ts2->day && ts1->hour == ts2->hour && ts1->minute > ts2->minute))
+    return 1;
+  else
+    return -1;
+}

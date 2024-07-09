@@ -17,4 +17,7 @@ void convert_to_feature(Timestamp* ts, float* float_ts);
 void copy_timestamp(Timestamp* ts, Timestamp* new_ts);
 int timestamp_to_string(Timestamp* ts, char* string);
 void string_to_timestamp(char* string, Timestamp* ts);
+
+// Compare two timestamps: 0 if equal, 1 if ts1 > ts2, -1 if ts1 < ts2
+int cmp_timestamp(Timestamp* ts1, Timestamp* ts2);
 #endif // TIMESTAMP_H
