@@ -42,7 +42,7 @@ extern float min_temp_user;
 extern float sampled_energy;
 extern float predicted_energy;
 extern Timestamp timestamp;
-extern Timestamp timestamp_energy;
+
 //[+] EXTERNAL PARAMETERS
 extern bool button_pressed;
 //[+] DECISION PARAMETERS
@@ -99,11 +99,7 @@ static void manage_hvac()
     {
         LOG_ERR("[Climate-manager] Energy parameters not arrived\n");
         return;
-    }/*else if (cmp_timestamp(&timestamp, &timestamp_energy) >= 0)
-    {
-        LOG_ERR("[Climate-manager] Energy parameters outdated\n");
-        return;
-    } */else if (button_pressed)
+    }else if (button_pressed)
     {
         LOG_INFO("[Climate-manager] BUTTON PRESSED: FORCED HVAC2 OPERATION\n");
         active_hvac = HVAC2;

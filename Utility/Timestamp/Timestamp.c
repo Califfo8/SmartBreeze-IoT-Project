@@ -86,7 +86,12 @@ int timestamp_to_string(Timestamp* ts, char* string)
 
 void string_to_timestamp(char* string, Timestamp* ts)
 {
-  sscanf(string, "%d-%d-%dT%d:%dZ", &ts->year, &ts->month, &ts->day, &ts->hour, &ts->minute);
+  int result = sscanf(string, "%d-%d-%dT%d:%dZ", &ts->year, &ts->month, &ts->day, &ts->hour, &ts->minute);
+  if (result == 5) {
+        LOG_DBG("Parsed successfully\n");
+    } else {
+        LOG_DBG("Failed to parse the string. Only %d values were read.\n", result);
+    }
 }
 
 int cmp_timestamp(Timestamp* ts1, Timestamp* ts2)

@@ -56,13 +56,6 @@ Timestamp timestamp = {
 //[+] OBSERVED RESOURCE
 float sampled_energy = -1;
 float predicted_energy = -1;
-Timestamp timestamp_energy = {
-  .year = -1,
-  .month = -1,
-  .day = -1,
-  .hour = -1,
-  .minute = -1
-};
 //[+] TIMERS
 #define SLEEP_INTERVAL 30 // in seconds
 static struct etimer sleep_timer;
@@ -189,22 +182,11 @@ static void solar_energy_callback(coap_observee_t *obs, void *notification, coap
         // Update the sampled energy
         sampled_energy = payload.measurement_data[1].v.v;
         LOG_INFO("[Climate-manager][%s]Sampled energy received: %.2f\n", payload.measurement_data[1].time, sampled_energy);
-        // Update the timestamp of the prediction
-        string_to_timestamp(payload.measurement_data[0].time, &timestamp_energy);
-        if (clock_sync == false) {
-            
-            Timestamp ts ={
-                .year = -1,
-                .month = -1,
-                .day = -1,
-                .hour = -1,
-                .minute = -1
-            };
-            string_to_timestamp(payload.measurement_data[1].time, &ts);
-            copy_timestamp(&ts, &timestamp);
-            clock_sync = true;
-            LOG_INFO("[Climate-manager]Clock syncronized\n");
-        }
+        // Update the timestamp of the sample    
+        char * timestamp_str = payload.measurement_data[1].time;
+        timestamp_str += 1;
+        timestamp_str[strlen(timestamp_str) - 1] = '\0'; // Remove the quotes ["timestamp"]
+        string_to_timestamp(timestamp_str, &timestamp);
         
         res_temperature_HVAC.trigger();
         break;
@@ -308,20 +290,11 @@ PROCESS_THREAD(climate_manager_process, ev, data)
   coap_activate_resource(&res_settings, "settings");
   leds_single_off(LEDS_YELLOW);
   ctrl_leds(LEDS_RED);
-  //etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
   do
   {
     //Process going to sleep
-    PROCESS_YIELD();/*
-    if(etimer_expired(&sleep_timer))
-    {
-      // Update the timestamp
-      advance_time(&timestamp, m_sampling_period);
-      // Sense the temperature and manage the HVAC
-      res_temperature_HVAC.trigger();
-      // Wait for the next sensing interval
-      etimer_set(&sleep_timer, CLOCK_SECOND * sampling_period);
-    }else*/ if(ev == button_hal_press_event)
+    PROCESS_YIELD();
+    if(ev == button_hal_press_event)
     {
         button_pressed = true;
         ctrl_leds(LEDS_BLUE);
