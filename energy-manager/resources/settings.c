@@ -11,14 +11,21 @@
 //[+] LOG CONFIGURATION
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
+//[+] DEBUG
+#define DEBUG true
 
 //[+] TIME PARAMETERS
-#define H_SAMPLING_PERIOD 1 // in hours
-int m_sampling_period = 60 * H_SAMPLING_PERIOD;
+#define H_SAMPLING_PERIOD 0.0025 // in hours
 int sampling_period = 3600 * H_SAMPLING_PERIOD; //in seconds
+// For debugging purposes in deployment the advanced time is faked
+#if DEBUG
+  int m_sampling_period = 60;
+#else
+  int m_sampling_period = 60 * H_SAMPLING_PERIOD;
+#endif
 
 //----------------------------------RESOURCES----------------------------------//
-static float h_sampling_period = 1; // in hours
+static float h_sampling_period = H_SAMPLING_PERIOD; // in hours
 
 //----------------------------FUNCTIONS DEFINITIONS----------------------------------//
 
@@ -46,7 +53,8 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
     // Prepare the json
     char json_str[MAX_PAYLOAD_LEN];
     int payload_len = -1;
-    snprintf(json_str, MAX_PAYLOAD_LEN, "{\"h_sampling_period\":%f}", h_sampling_period);
+    int value = (int)(h_sampling_period * DECIMAL_ACCURANCY);
+    snprintf(json_str, MAX_PAYLOAD_LEN, "{\"h_sampling_period\":%d}", value);
     payload_len = strlen(json_str);
 
     // Convert the JSON SenML to a payload
@@ -89,10 +97,19 @@ static void res_post_handler(coap_message_t *request, coap_message_t *response,
       return;
     }   
     LOG_INFO("[Energy-manager] Received settings: %s\n",(char*)payload);
-    sscanf((char*)payload, "{\"Energy sampling period(h)\":%f}", &h_sampling_period);
+    int value = 0;
+    sscanf((char*)payload, "{\"Energy sampling period(h)\":%d}", &value);
+    LOG_INFO("[Energy-manager] Received settings value: %d\n",value);
+    h_sampling_period = (float)(value)/DECIMAL_ACCURANCY;
     // Update the sampling period
     sampling_period = 3600 * h_sampling_period;
-    m_sampling_period = 60 * h_sampling_period;
+    #if DEBUG
+      m_sampling_period = 60;
+    #else
+      m_sampling_period = 60 * h_sampling_period;
+    #endif
+
+    
     LOG_INFO("[Energy-manager] New settings: h_sampling_period: %f \n", h_sampling_period);
     coap_set_status_code(response, CHANGED_2_04);
     coap_set_payload(response, buffer, 0);

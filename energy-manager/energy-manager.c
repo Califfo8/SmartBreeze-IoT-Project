@@ -12,7 +12,7 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 //[+] REGISRATION PARAMETERS
-#define NODE_INFO_JSON "{\"node\":\"energy-manager\",\"resource\":\"solar_energy\",\"settings\":\"{\\\"Energy sampling period(h)\\\":1}\"}"
+#define NODE_INFO_JSON "{\"node\":\"energy-manager\",\"resource\":\"solar_energy\",\"settings\":\"{\\\"Energy sampling period(h)\\\":25}\"}"
 #define MAX_REGISTER_ATTEMPTS 3
 #define SERVER_EP "coap://[fd00::1]:5683"
 #define CREATED_CODE 65
@@ -29,10 +29,10 @@ extern int m_sampling_period;
 extern int sampling_period; //in seconds
 
 Timestamp timestamp = {
-  .year = 2024,
-  .month = 7,
-  .day = 15,
-  .hour = 5,
+  .year = 2000,
+  .month = 0,
+  .day = 0,
+  .hour = 0,
   .minute = 0
 };// DOPO DEVE ESSERE RICHIESTO ALL'APPLICAZIONE CLOUD
 
@@ -106,13 +106,32 @@ PROCESS_THREAD(energy_manager_process, ev, data)
     leds_single_on(LEDS_YELLOW);
   // Activate the solar energy resource
   coap_activate_resource(&res_solar_energy,"solar_energy");
-  //------------------[1]-CoAP-Server-Registration-------------------------------//
+  
    static coap_endpoint_t server_ep;
     static coap_message_t request[1]; // This way the packet can be treated as pointer as usual
-
+    // Populate the coap endpoint structure
+    coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
+    //------------------------[1]-Clock-Request----------------------------------//
+    LOG_INFO("[Energy-manager] Time request process started\n");
+    max_attempts = MAX_CLOCK_REQ_ATTEMPTS;
     while (max_attempts != 0) {
-        // Populate the coap endpoint structure
-        coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
+        // Prepare the request
+        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
+        coap_set_header_uri_path(request, service_clock_url);
+        // Set the payload
+        coap_set_payload(request, (uint8_t *)"", strlen(""));
+        // Send the request and wait for the response
+        COAP_BLOCKING_REQUEST(&server_ep, request, clock_chunk_handler);
+        // Something goes wrong with the registration, the node sleeps and tries again
+        if (max_attempts == -1) {
+            etimer_set(&sleep_timer, CLOCK_SECOND * SLEEP_INTERVAL);
+            PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
+            max_attempts = MAX_CLOCK_REQ_ATTEMPTS;
+        }
+    }
+    //------------------[2]-CoAP-Server-Registration-------------------------------//
+    max_attempts = MAX_REGISTER_ATTEMPTS;
+    while (max_attempts != 0) {
         // Prepare the request
         coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0);
         coap_set_header_uri_path(request, service_registration_url);
@@ -128,26 +147,7 @@ PROCESS_THREAD(energy_manager_process, ev, data)
         }
       
     }
-  //------------------------[2]-Clock-Request----------------------------------//
-    LOG_INFO("[Energy-manager] Time request process started\n");
-    max_attempts = MAX_CLOCK_REQ_ATTEMPTS;
-    while (max_attempts != 0) {
-        // Populate the coap endpoint structure
-        coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
-        // Prepare the request
-        coap_init_message(request, COAP_TYPE_CON, COAP_GET, 0);
-        coap_set_header_uri_path(request, service_clock_url);
-        // Set the payload
-        coap_set_payload(request, (uint8_t *)"", strlen(""));
-        // Send the request and wait for the response
-        COAP_BLOCKING_REQUEST(&server_ep, request, clock_chunk_handler);
-        // Something goes wrong with the registration, the node sleeps and tries again
-        if (max_attempts == -1) {
-            etimer_set(&sleep_timer, CLOCK_SECOND * SLEEP_INTERVAL);
-            PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
-            max_attempts = MAX_CLOCK_REQ_ATTEMPTS;
-        }
-    }
+  
   //------------------------[3]-Energy-Sensing----------------------------------//
   LOG_INFO("[Energy-manager] Started\n");
   // Activate the settings resource

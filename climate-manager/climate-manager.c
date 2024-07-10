@@ -19,9 +19,11 @@
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
+//[+] DEBUG
+#define DEBUG true
 
 //[+] REGISRATION PARAMETERS
-#define NODE_INFO_JSON "{\"node\":\"climate-manager\",\"resource\":\"temperature_HVAC\",\"settings\":\"{\\\"Temp sampling period(h)\\\":1,\\\"Max T\\\":25,\\\"Min T\\\":10}\"}"
+#define NODE_INFO_JSON "{\"node\":\"climate-manager\",\"resource\":\"temperature_HVAC\",\"settings\":\"{\\\"Temp sampling period(h)\\\":25,\\\"Max T\\\":250000,\\\"Min T\\\":100000}\"}"
 #define MAX_REGISTER_ATTEMPTS 3
 #define SERVER_EP "coap://[fd00::1]:5683"
 #define CREATED_CODE 65
@@ -42,15 +44,14 @@ bool clock_sync = false;
 static coap_endpoint_t energy_manager_ep;
 static coap_observee_t* solar_energy_res;
 //[+] TIME USER PARAMETERS
-extern int m_sampling_period;
 extern int sampling_period;
 
 Timestamp timestamp = {
-  .year = -1,
-  .month = -1,
-  .day = -1,
-  .hour = -1,
-  .minute = -1
+  .year = 2000,
+  .month = 0,
+  .day = 0,
+  .hour = 0,
+  .minute = 0
 };
 
 //[+] OBSERVED RESOURCE
@@ -219,29 +220,13 @@ PROCESS_THREAD(climate_manager_process, ev, data)
     leds_single_on(LEDS_YELLOW);
   // Activate the temperature resource
   coap_activate_resource(&res_temperature_HVAC,"temperature_HVAC");
-  //------------------[1]-CoAP-Server-Registration-------------------------------//
+  
     static coap_endpoint_t server_ep;
     static coap_message_t request[1]; // This way the packet can be treated as pointer as usual
 
     // Populate the coap endpoint structure
     coap_endpoint_parse(SERVER_EP, strlen(SERVER_EP), &server_ep);
-    while (max_attempts != 0) {
-        // Prepare the request
-        coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0);
-        coap_set_header_uri_path(request, service_registration_url);
-        // Set the payload
-        coap_set_payload(request, (uint8_t *)NODE_INFO_JSON, strlen(NODE_INFO_JSON));
-        // Send the request and wait for the response
-        COAP_BLOCKING_REQUEST(&server_ep, request, registration_chunk_handler);
-        // Something goes wrong with the registration, the node sleeps and tries again
-        if (max_attempts == -1) {
-            etimer_set(&sleep_timer, CLOCK_SECOND * SLEEP_INTERVAL);
-            PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
-            max_attempts = MAX_REGISTER_ATTEMPTS;
-        }
-      
-    }
-  //------------------------[2]-Clock-Request----------------------------------//
+    //------------------------[1]-Clock-Request----------------------------------//
     LOG_INFO("[Climate-manager] Time request process started\n");
     max_attempts = MAX_CLOCK_REQ_ATTEMPTS;
     while (max_attempts != 0) {
@@ -258,6 +243,24 @@ PROCESS_THREAD(climate_manager_process, ev, data)
             PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
             max_attempts = MAX_CLOCK_REQ_ATTEMPTS;
         }
+    }
+    //------------------[2]-CoAP-Server-Registration-------------------------------//
+    max_attempts = MAX_REGISTER_ATTEMPTS;
+    while (max_attempts != 0) {
+        // Prepare the request
+        coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0);
+        coap_set_header_uri_path(request, service_registration_url);
+        // Set the payload
+        coap_set_payload(request, (uint8_t *)NODE_INFO_JSON, strlen(NODE_INFO_JSON));
+        // Send the request and wait for the response
+        COAP_BLOCKING_REQUEST(&server_ep, request, registration_chunk_handler);
+        // Something goes wrong with the registration, the node sleeps and tries again
+        if (max_attempts == -1) {
+            etimer_set(&sleep_timer, CLOCK_SECOND * SLEEP_INTERVAL);
+            PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&sleep_timer));
+            max_attempts = MAX_REGISTER_ATTEMPTS;
+        }
+      
     }
   //------------------------[3]-Discovery-Solar-Node---------------------------------//
     LOG_INFO("[Climate-manager] Discovery process started\n");
@@ -299,8 +302,12 @@ PROCESS_THREAD(climate_manager_process, ev, data)
         button_pressed = true;
         ctrl_leds(LEDS_BLUE);
         // Update the timestamp
-        clock_time_t remaining_time = etimer_expiration_time(&sleep_timer) - clock_time();
-        int minutes_passed =  ( sampling_period - (remaining_time / CLOCK_SECOND)) / 60;
+        #if DEBUG
+            int minutes_passed =  30;      
+        #else
+            clock_time_t remaining_time = etimer_expiration_time(&sleep_timer) - clock_time();
+            int minutes_passed =  ( sampling_period - (remaining_time / CLOCK_SECOND)) / 60; 
+        #endif
         
         Timestamp old_timestamp={
             .year = timestamp.year,

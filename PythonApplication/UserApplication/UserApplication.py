@@ -13,6 +13,7 @@ class Node:
         self.id = id
         self.ip = node_tuple[0]
         self.name = node_tuple[1]
+        self._decimal_accurancy = 10000
         self.settings = json.loads(node_tuple[2])
         self.modified = False
         self._keys = list(self.settings.keys())
@@ -21,11 +22,11 @@ class Node:
         print(f"\n[{self.id}-{self.name.upper()}]")
         i = 0
         for key, value in self.settings.items():
-            print(f"\t[{i}] {key}: {value}")
+            print(f"\t[{i}] {key}: {value / self._decimal_accurancy}")
             i += 1
     
     def change_setting(self, parameter_id, new_value):
-        self.settings[self._keys[parameter_id]] = new_value
+        self.settings[self._keys[parameter_id]] = int(new_value * self._decimal_accurancy)
         self.modified = True
 
     def __str__(self):
@@ -70,6 +71,7 @@ class UserApplication:
     def setting_menu(self, nodes):
         self.clear()
         print("||======================NODES SETTINGS============================||")
+        print("The sampling interval is a common parameter for all the nodes,\nif it is changed in one node, all the nodes will be affected\nby the modification")
         for node in nodes:
             node.print_settings()           
         print("[s] save changes")
@@ -123,8 +125,11 @@ class UserApplication:
                     new_value = float(input_cmd[2])
                 except:
                     print("Invalid command")
-                
-                nodes[node_id].change_setting(parameter_id, new_value)
+                if parameter_id == 0:
+                    for node in nodes:
+                        node.change_setting(parameter_id, new_value)
+                else:
+                    nodes[node_id].change_setting(parameter_id, new_value)
         self.db.close()          
          
     def list_nodes(self):

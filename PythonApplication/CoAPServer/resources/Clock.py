@@ -4,7 +4,7 @@ from datetime import datetime
 
 class Clock(Resource):
 
-    def __init__(self, name="CoAP Discovery"):
+    def __init__(self, name="CoapClock"):
         super(Clock, self).__init__(name, observable=False)
         self.payload = datetime.now().strftime("%Y-%m-%dT%H:%MZ")         
     

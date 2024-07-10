@@ -214,6 +214,7 @@ static void res_event_handler(void) {
     LOG_INFO("[Energy-manager] -------------------NEW-EVENT--------------\n");
     LOG_INFO("[Energy-manager] New sample at time %s\n", timestamp_str);
     // Sample the solar energy
+    LOG_INFO("[Energy-manager] -Old Sampled Solar energy: %f", sampled_energy);
     sampled_energy = fake_solar_sensing(sampled_energy);
     LOG_INFO("[Energy-manager] -Sampled Solar energy: %f", sampled_energy);
     // Predict the solar energy

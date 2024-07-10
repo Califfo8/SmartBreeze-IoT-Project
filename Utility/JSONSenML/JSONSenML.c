@@ -46,8 +46,8 @@ int json_to_payload(json_senml* js, char* payload)
         strcat(payload, comodo);
         if (js->measurement_data[i].type == V_FLOAT)
         {
-
-            sprintf(comodo, "%f}", js->measurement_data[i].v.v);
+            int value = (int)(js->measurement_data[i].v.v * DECIMAL_ACCURANCY);
+            sprintf(comodo, "%d}", value);
         }
         else if (js->measurement_data[i].type == V_INT)
         {
@@ -145,7 +145,6 @@ void parse_str (char *payload, json_senml * js)
       //Value
       char time_value[MAX_STR_LEN];
       char *endptr;
-      char *point;
       passo = copy_value (pos, time_value, "\"v\":", "}");
       if(passo == -1)
       {
@@ -153,18 +152,21 @@ void parse_str (char *payload, json_senml * js)
         return;
       }
       pos += passo;
-      // Replace "," to "."
-      point = strstr(time_value, ",");
-      if(point != NULL)
-      {
-          *point = '.';
-      }
-      // Convert to float
-      js->measurement_data[i].v.v = strtof(time_value, &endptr);
+      // Convert to int
+      int value = strtol(time_value, &endptr, 10);
+      
        if (endptr == time_value) {
         LOG_ERR("ERROR: Convert value of measure %d\n", i);
         }
-        js->measurement_data[i].type = V_FLOAT;
+        if(value >=DECIMAL_ACCURANCY)
+        {   // Convert to float
+            js->measurement_data[i].v.v = (float)(value/DECIMAL_ACCURANCY);
+            js->measurement_data[i].type = V_FLOAT;
+        }else{
+            // Convert to int
+            js->measurement_data[i].v.vd = value;
+            js->measurement_data[i].type = V_INT;
+        }
       // Skip the ",{"
       pos+=2;
   }

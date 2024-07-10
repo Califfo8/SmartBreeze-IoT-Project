@@ -13,8 +13,7 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 //[+] TIME PARAMETERS
-#define H_SAMPLING_PERIOD 1 // in hours
-int m_sampling_period = 60 * H_SAMPLING_PERIOD;
+#define H_SAMPLING_PERIOD 0.0025 // in hours
 int sampling_period = 3600 * H_SAMPLING_PERIOD; //in seconds
 //[+] USER PARAMETERS
 #define MAX_TEMP_USER 25
@@ -50,7 +49,11 @@ static void res_get_handler(coap_message_t *request, coap_message_t *response,
     // Prepare the json
     char json_str[MAX_PAYLOAD_LEN];
     int payload_len = -1;
-    snprintf(json_str, MAX_PAYLOAD_LEN, "{\"Temp sampling period(h)\":%f,\"Max T\":%f,\"Min T\":%f}", h_sampling_period, max_temp_user, min_temp_user);
+    int values[] = {0, 0, 0};
+    values[0] = (int)(h_sampling_period * DECIMAL_ACCURANCY);
+    values[1] = (int)(max_temp_user * DECIMAL_ACCURANCY);
+    values[2] = (int)(min_temp_user * DECIMAL_ACCURANCY);
+    snprintf(json_str, MAX_PAYLOAD_LEN, "{\"Temp sampling period(h)\":%d,\"Max T\":%d,\"Min T\":%d}", values[0], values[1], values[2]);
     payload_len = strlen(json_str);
     // Convert the JSON SenML to a payload
     if (payload_len < 0)
@@ -92,11 +95,14 @@ static void res_post_handler(coap_message_t *request, coap_message_t *response,
       return;
     }   
     LOG_INFO("[Climate-manager] New settings: %s\n", payload);
-    sscanf((char*)payload, "{\"Temp sampling period(h)\":%f,\"Max T\":%f,\"Min T\":%f}", &h_sampling_period, &max_temp_user, &min_temp_user);
-    LOG_INFO("[Climate-manager] Post sscanf\n");
+    int values[] = {0, 0, 0};
+    sscanf((char*)payload, "{\"Temp sampling period(h)\":%d,\"Max T\":%d,\"Min T\":%d}", &values[0], &values[1], &values[2]);
+    h_sampling_period = (float)(values[0])/DECIMAL_ACCURANCY;
+    max_temp_user = (float)(values[1])/DECIMAL_ACCURANCY;
+    min_temp_user = (float)(values[2])/DECIMAL_ACCURANCY;
+    
     // Update the sampling period
     sampling_period = 3600 * h_sampling_period;
-    m_sampling_period = 60 * h_sampling_period;
     LOG_INFO("[Climate-manager] New settings: Temp sampling period(h):%f | Max T:%f | Min T:%f\n", h_sampling_period, max_temp_user, min_temp_user);
     coap_set_status_code(response, CHANGED_2_04);
     coap_set_payload(response, buffer, 0);

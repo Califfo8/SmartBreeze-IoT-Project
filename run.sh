@@ -10,33 +10,26 @@ MYSQL_PASSWORD="PASSWORD"
 #---------------------------------------------
 
 #Utility variables
-SHELL_HYSTORY=""
-DATABASE_NAME="SmartBreezeDB" 
+DATABASE_NAME="SmartBreezeDB"
+TARGET_BOARD="TARGET=nrf52840 BOARD=dongle"
 
 function compile_node(){
-    cd ./$1
+    local node_name=$1
+    local target="nrf52840"
+
+    cd ./$node_name
     make distclean
-    make TARGET=nrf52840 BOARD=dongle $1
+    make $TARGET_BOARD $node_name
     cd ..
 }
 
-function shell_echo(){
-    echo -e "$1"
-    local param="$1"
-    SHELL_HYSTORY="${SHELL_HYSTORY} ${param}"
-}
-
 function compile_all_nodes(){
-    shell_echo "Inizio compilazione:\n"
+    echo "Inizio compilazione:"
     for node in $NODE_LIST
     do
         compile_node $node
-        shell_echo "\t - ${node} compilato\n"
+        echo -e "\t - ${node} compilato\n"
     done
-    echo "Press any key to continue..."
-    read -n 1 -s
-    clear
-    echo -e $SHELL_HYSTORY
     echo "Fine compilazione"
 }
 
@@ -46,7 +39,15 @@ function run_cooja(){
 }
 
 function run_rpl_border_router(){
-    gnome-terminal -- bash -c ' cd ..;cd rpl-border-router;make TARGET=cooja connect-router-cooja;'
+    local target=$1
+    if [ "$target" != "cooja" ]; then
+        gnome-terminal -- bash -c ' cd ..;cd rpl-border-router;make TARGET=nrf52840 BOARD=dongle connect-router;'
+        echo "Connecting rpl-border-router to dongle"
+    else
+        gnome-terminal -- bash -c ' cd ..;cd rpl-border-router;make TARGET=cooja connect-router-cooja;'
+        echo "Connecting rpl-border-router to cooja"
+    fi
+    
 }
 
 function run_CoAP_server(){
@@ -93,6 +94,58 @@ function query_db()
     mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -D$DATABASE_NAME -e "$1"
 }
 
+function flash_rpl_border_router() {
+    echo "Flashing RPL border router..."
+    cd ..
+    cd rpl-border-router
+    make $TARGET_BOARD PORT=/dev/ttyACM0 border-router.dfu-upload
+    cd - > /dev/null
+}
+
+# Function to flash a sensor
+function flash_sensor() {
+    local node_name=$1
+    
+    if [ -n "$node_name" ]; then
+        echo "Flashing $node_name sensor..."
+        cd ./$node_name
+        #make distclean
+        make $TARGET_BOARD ${node_name}.dfu-upload PORT=/dev/ttyACM0
+        cd - > /dev/null
+    else
+        echo "Invalid sensor name: $node_name"
+    fi
+}
+
+flash_all() {
+    for node_name in $NODE_LIST; do
+        read -p "Press Enter to flash the next sensor (${node_name})..."
+        flash_sensor $node_name
+    done
+    read -p "Press Enter to flash the next sensor (rpl border router)..."
+    flash_rpl_border_router
+}
+
+function flash()
+{
+    # Prompt the user for the number of sensors
+    echo "How many sensors do you want to flash? (Enter 'all' to flash all sensors)"
+    read num_sensors
+    if [ "$num_sensors" == "all" ]; then
+        flash_all
+    else
+        for ((i=1; i<=$num_sensors; i++)); do
+            read -p "Enter the name of the sensor to flash: " sensor_name
+            if [ $sensor_name == "rpl-border-router" ]; then
+                flash_rpl_border_router
+                continue
+            else
+                flash_sensor $sensor_name
+            fi
+        done
+    fi
+}
+
 case $1 in
     compile_all)
         compile_all_nodes
@@ -104,7 +157,7 @@ case $1 in
         run_cooja
         ;;
     border-router)
-        run_rpl_border_router
+        run_rpl_border_router $2
         ;;
     coap-server)
         run_CoAP_server
@@ -112,18 +165,18 @@ case $1 in
     sim)
         create_db
         compile_all_nodes
-        shell_echo "Starting Cooja..."
+        echo "Starting Cooja..."
         run_cooja
-        shell_echo "Press any key to start the border-router..."
+        echo "Press any key to start the border-router..."
         read -n 1 -s
-        run_rpl_border_router
+        run_rpl_border_router "cooja"
         echo "Press any key to start the CoAP server..."
         read -n 1 -s
         run_CoAP_server
         ;;
     relsim)
         create_db
-        run_rpl_border_router
+        run_rpl_border_router "cooja"
         echo "Press any key to start the CoAP server..."
         read -n 1 -s
         run_CoAP_server
@@ -135,6 +188,17 @@ case $1 in
         query_db "$2"
         ;;
     user)
+        run_user_app
+        ;;
+    flash)
+        flash
+        ;;
+    deploy)
+        create_db
+        run_rpl_border_router
+        echo "Press any key to start the CoAP server..."
+        read -n 1 -s
+        run_CoAP_server
         run_user_app
         ;;
     *)

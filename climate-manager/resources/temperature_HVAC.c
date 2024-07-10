@@ -13,6 +13,9 @@
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
+//[+] DEBUG
+#define DEBUG 0
+
 //[+] TEMPERATURE PARAMETERS
 #define UNIT "C"
 #define OFF 0
@@ -196,7 +199,7 @@ static void manage_hvac()
         ctrl_leds(LEDS_RED);
         break;
     case HVAC1:
-        ctrl_leds(LEDS_YELLOW);
+        ctrl_leds(LEDS_BLUE);
         break;
     case HVAC2:
         ctrl_leds(LEDS_GREEN);

@@ -18,7 +18,7 @@ class Log:
         self.logger = logging.getLogger(module)
         self.logger.setLevel(logging.INFO)
         self.handler = logging.StreamHandler()
-        self.formatter = logging.Formatter('%(levelname)s - %(module)s - %(resource)s - %(message)s')
+        self.formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(module)s - %(resource)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S' )
         self.handler.setFormatter(self.formatter)
         self.logger.addHandler(self.handler)
         self.logger.addFilter(self.filter)

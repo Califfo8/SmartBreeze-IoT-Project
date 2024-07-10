@@ -16,6 +16,7 @@
 #define V_INT 0
 #define V_FLOAT 1
 #define V_STRING 2
+#define DECIMAL_ACCURANCY 10000
 
 //LOG CONFIGURATION
 #define LOG_MODULE "App"
