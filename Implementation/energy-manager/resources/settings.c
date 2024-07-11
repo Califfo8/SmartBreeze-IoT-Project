@@ -15,15 +15,15 @@
 #define DEBUG true
 
 //[+] TIME PARAMETERS
-#define H_SAMPLING_PERIOD 0.0025 // in hours
-int sampling_period = 3600 * H_SAMPLING_PERIOD; //in seconds
 // For debugging purposes in deployment the advanced time is faked
 #if DEBUG
+  #define H_SAMPLING_PERIOD 0.0025 // in hours
   int m_sampling_period = 60;
 #else
+  #define H_SAMPLING_PERIOD 1 // in hours
   int m_sampling_period = 60 * H_SAMPLING_PERIOD;
 #endif
-
+int sampling_period = 3600 * H_SAMPLING_PERIOD; //in seconds
 //----------------------------------RESOURCES----------------------------------//
 static float h_sampling_period = H_SAMPLING_PERIOD; // in hours
 

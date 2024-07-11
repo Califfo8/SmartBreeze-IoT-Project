@@ -23,7 +23,11 @@
 #define DEBUG true
 
 //[+] REGISRATION PARAMETERS
-#define NODE_INFO_JSON "{\"node\":\"climate-manager\",\"resource\":\"temperature_HVAC\",\"settings\":\"{\\\"Temp sampling period(h)\\\":25,\\\"Max T\\\":250000,\\\"Min T\\\":100000}\"}"
+#if DEBUG
+    #define NODE_INFO_JSON "{\"node\":\"climate-manager\",\"resource\":\"temperature_HVAC\",\"settings\":\"{\\\"Temp sampling period(h)\\\":25,\\\"Max T\\\":250000,\\\"Min T\\\":100000}\"}"
+#else
+    #define NODE_INFO_JSON "{\"node\":\"climate-manager\",\"resource\":\"temperature_HVAC\",\"settings\":\"{\\\"Temp sampling period(h)\\\":10000,\\\"Max T\\\":250000,\\\"Min T\\\":100000}\"}"
+#endif
 #define MAX_REGISTER_ATTEMPTS 3
 #define SERVER_EP "coap://[fd00::1]:5683"
 #define CREATED_CODE 65

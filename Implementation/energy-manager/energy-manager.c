@@ -11,8 +11,16 @@
 #define LOG_MODULE "App"
 #define LOG_LEVEL LOG_LEVEL_INFO
 
+//[+] DEBUG
+#define DEBUG true
+
 //[+] REGISRATION PARAMETERS
-#define NODE_INFO_JSON "{\"node\":\"energy-manager\",\"resource\":\"solar_energy\",\"settings\":\"{\\\"Energy sampling period(h)\\\":25}\"}"
+#if DEBUG
+    #define NODE_INFO_JSON "{\"node\":\"energy-manager\",\"resource\":\"solar_energy\",\"settings\":\"{\\\"Energy sampling period(h)\\\":25}\"}"
+#else
+    #define NODE_INFO_JSON "{\"node\":\"energy-manager\",\"resource\":\"solar_energy\",\"settings\":\"{\\\"Energy sampling period(h)\\\":1000}\"}"
+#endif
+
 #define MAX_REGISTER_ATTEMPTS 3
 #define SERVER_EP "coap://[fd00::1]:5683"
 #define CREATED_CODE 65

@@ -4,7 +4,7 @@
 #include <stdio.h>
 // emlearn generated model
 #include "eml_net.h"
-#include "../AI/solar_prediction.h"
+#include "../Machine-Learning/solar_prediction.h"
 //Utility functions
 #include "../Utility/Timestamp/Timestamp.h"
 #include "../Utility/RandomNumberGenerator/RandomNumberGenerator.h"
