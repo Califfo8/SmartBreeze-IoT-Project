@@ -279,7 +279,7 @@ static void res_event_handler(void) {
     timestamp_to_string(&timestamp, timestamp_str);
     // Sample the temperature
     old_temperature = temperature;
-    temperature = fake_temp_sensing(temperature);
+    temperature = fake_temp_sensing(old_temperature);
     LOG_INFO("[Climate-manager]------------------------NEW-EVENT------------------ \n");
     LOG_INFO("[Climate-Manager] New sample at time %s\n", timestamp_str);
     LOG_INFO("[Climate-manager] Sampled Temperature: %f\n", temperature);

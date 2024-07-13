@@ -1,5 +1,5 @@
-climate-manager/build
-energy-manager/build
+Implementation/climate-manager/build
+Implementation/energy-manager/build
 .vscode
 # Prerequisites
 *.d

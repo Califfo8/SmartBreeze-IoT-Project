@@ -94,7 +94,7 @@ function create_db(){
     mysql_cmd "CREATE TABLE IF NOT EXISTS ${DATABASE_NAME}.temperature 
     (timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     temperature FLOAT NOT NULL,
-    active_HVAC INT NOT NULL,
+    active_HVAC TINYINT(1) NOT NULL,
     PRIMARY KEY (timestamp));"> /dev/null
     echo -e "\t- \"temperature\" table created"
 

@@ -3,10 +3,9 @@
 float generate_random_float(float old_value, int max_value, int min_value, float step_size, int increases)
 {
     int step = step_size * (max_value - min_value);
-    int delta_i = random_rand() % step;
-    int delta_d = delta_i % 100;
-    float delta = (float)delta_d / 100 + (float)delta_i; 
-    float new_value = 0;
+    float random_value = (float)random_rand()/ RANDOM_RAND_MAX;
+    float delta = random_value * step;
+    float new_value =0;
     if (increases)
         new_value = old_value + delta;
     else
