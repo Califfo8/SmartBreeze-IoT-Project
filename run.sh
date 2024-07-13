@@ -43,7 +43,7 @@ function run_cooja(){
 function run_rpl_border_router(){
     local target=$1
     if [ "$target" != "cooja" ]; then
-        gnome-terminal -- bash -c ' cd ..;cd rpl-border-router;make '$TARGET_BOARD' connect-router;'
+        gnome-terminal -- bash -c ' cd ..;cd rpl-border-router;make TARGET=nrf52840 BOARD=dongle connect-router;'
         echo "Connecting rpl-border-router to dongle"
     else
         gnome-terminal -- bash -c ' cd ..;cd rpl-border-router;make TARGET=cooja connect-router-cooja;'
@@ -209,7 +209,7 @@ case $1 in
         echo "Starting deployment..."
         create_db
         run_rpl_border_router
-        echo "Press any key to start the CoAP server..."
+        echo "Press any key to start the CoAP server and the User application..."
         read -n 1 -s
         run_CoAP_server
         run_user_app
