@@ -85,7 +85,7 @@ More details are available on the documentation.
 The system runs on Ubuntu(64 bit), here are the installation steps:
 1. Clone the repository alongside Contiki-NG:
 ```
-git clone https://github.com/yourusername/SmartBreeze.git
+git clone https://github.com/Califfo8/SmartBreeze.git
 git clone https://github.com/contiki-ng/contiki-ng.git
 cd SmartBreeze
 ```
