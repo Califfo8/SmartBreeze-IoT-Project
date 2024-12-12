@@ -1,6 +1,9 @@
 Implementation/climate-manager/build
 Implementation/energy-manager/build
 .vscode
+Documents/Comanda
+# Powerpoint
+*.pptx
 # Prerequisites
 *.d
 
