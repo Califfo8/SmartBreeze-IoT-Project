@@ -3,7 +3,8 @@ This repository contains the source code, configuration files, and resources for
 The SmartBreeze system is designed for adapting the energy consumption of the cooling system to the power production of a renewable energy source.
 In this README will be all the relative information to the repository's structure and it will provide the instructions for installing the system.
 More details are available on the documentation.
-![SmartBreeze architecture](Documents/Images/Implementazione.png)
+
+![SmartBreeze architecture](Documents/Images/Implementazione_R.png)
 ## Repository Structure
 ```
 .
