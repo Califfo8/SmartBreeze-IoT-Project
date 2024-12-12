@@ -3,10 +3,12 @@ This repository contains the source code, configuration files, and resources for
 The SmartBreeze system is designed for adapting the energy consumption of the cooling system to the power production of a renewable energy source.
 In this README will be all the relative information to the repository's structure and it will provide the instructions for installing the system.
 More details are available on the documentation.
+![SmartBreeze architecture](Documents/Images/Implementazione.png)
 ## Repository Structure
 ```
 .
 ├── Documents
+│   ├── Images
 │   └── SmartBreeze_Documentation.pdf
 ├── Implementation
 │   ├── climate-manager
@@ -58,7 +60,8 @@ More details are available on the documentation.
 └── run.sh
 ```
 - **Documents**
-  - `SmartBreeze_Documentation.pdf`: documentation of the project
+  - `Images`: contains the documentation's images.
+  - `SmartBreeze_Documentation.pdf`: documentation of the project.
 - **Implementation**
   - **climate-manager**: Source code, configuration files and makefile of the climate manager node.
     - **resources**
